@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from '@supabase/supabase-js'
-const supabase = createClient("https://qpeaidktnjynmtdmkynk.supabase.co", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFwZWFpZGt0bmp5bm10ZG1reW5rIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTM4MzU0MzgsImV4cCI6MjAyOTQxMTQzOH0.jyaHGYTzeM6mpar9IKlB1qH2ok8f1P4XGdJElHdC01M")
+const supabase = createClient("https://qdtinodmdbrxykyhampv.supabase.co", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFkdGlub2RtZGJyeHlreWhhbXB2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTQ2Nzk4NjYsImV4cCI6MjAzMDI1NTg2Nn0.Yaf1OZvaD-4FtJ6fNNySrvChKVie11BqvV8AIt7PX14")
 
 function Test() {
   const [text, setText] = useState<string | null>(null) as any
