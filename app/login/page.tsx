@@ -4,7 +4,6 @@ import { redirect } from "next/navigation";
 import { SubmitButton } from "@/components/submit-button";
 import { TextLink } from "@/components/text-link";
 import { Turnstile } from "@marsidev/react-turnstile";
-import { useEffect } from "react";
 
 export default function Login({ searchParams }: { searchParams: { message: string } }) {
   const signIn = async (formData: FormData) => {
