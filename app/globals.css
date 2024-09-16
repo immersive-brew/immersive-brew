@@ -2,26 +2,31 @@
 @tailwind components;
 @tailwind utilities;
 
-@layer base {
-  :root {
-    --background: 200 20% 98%;
-    --btn-background: 200 10% 91%;
-    --btn-background-hover: 200 10% 89%;
-    --foreground: 200 50% 3%;
-  }
-
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --background: 200 50% 3%;
-      --btn-background: 200 10% 9%;
-      --btn-background-hover: 200 10% 12%;
-      --foreground: 200 20% 96%;
-    }
-  }
+body {
+  background-color: #ebd7c7;
+  @apply text-black m-8; /* Changed text color to black */
 }
 
-@layer base {
-  * {
-    @apply border-foreground/20;
-  }
+button {
+  background-color: #b3b3b3; /* Custom gray background */
+  color: black; /* Text color */
+  @apply px-4 py-2 rounded-md; /* Button padding and border-radius */
 }
+
+button:hover {
+  background-color: #9e9e9e; /* Slightly darker gray on hover */
+}
+
+.tooltip {
+  @apply invisible absolute;
+}
+
+.has-tooltip:hover .tooltip {
+  @apply visible z-50;
+}
+
+/* Add rounded borders */
+* {
+  @apply rounded-sm; /* or use rounded-md for a slightly larger radius */
+}
+
