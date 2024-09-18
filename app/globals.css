@@ -50,28 +50,80 @@ main nav {
 }
 
 /* Card styles */
+/* Adjusting card styling to resemble the second image more closely */
+/* Container for the cards in grid layout */
+.card-list-container {
+  display: flex;
+  flex-wrap: wrap; /* This allows items to wrap to a new line */
+  gap: 16px; /* Adds spacing between cards */
+  justify-content: flex-start; /* Aligns cards to the left */
+}
+
+/* Individual card styling */
+/* Container for the cards in grid layout */
+.card-list-container {
+  display: flex;
+  flex-wrap: wrap; /* This allows items to wrap to a new line */
+  gap: 16px; /* Adds spacing between cards */
+  justify-content: flex-start; /* Aligns cards to the left */
+}
+
+/* Individual card styling */
 .card {
-  @apply bg-white shadow-sm rounded-md py-3 px-4 my-4 relative overflow-hidden transition-all duration-300 ease-in-out;
-  max-height: 200px; /* Set initial max height */
+  width: calc(50% - 16px); /* Cards always take 50% width minus the gap */
+  padding: 16px;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
   cursor: pointer;
 }
 
 .card.expanded {
-  max-height: 600px; /* Expand height when clicked */
+  max-height: none;
+  opacity: 1;
 }
 
 .card h3 {
-  @apply font-bold text-gray-700 text-sm mb-0;
+  font-size: 1.25rem;
+  margin-bottom: 8px;
 }
 
 .card p {
-  @apply my-4 text-sm leading-6;
+  font-size: 1rem;
   opacity: 0;
-  transition: opacity 0.3s ease;
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease, opacity 0.3s ease;
 }
 
 .card.expanded p {
-  opacity: 1; /* Show content when expanded */
+  opacity: 1;
+  max-height: 200px;
+}
+
+.card .read-more {
+  color: blue;
+  cursor: pointer;
+  font-size: 0.875rem;
+  margin-top: 8px;
+  display: block;
+}
+
+/* Ensure no more than 2 columns on all screen sizes */
+@media (min-width: 0) {
+  .card {
+    width: calc(50% - 16px); /* Cards always take 50% width */
+  }
+}
+
+.read-more {
+  @apply text-blue-500 mt-4;
+  transition: color 0.3s ease;
+}
+
+.read-more:hover {
+  @apply text-blue-700;
 }
 
 .pill {
@@ -93,3 +145,46 @@ main nav {
 .card .pill {
   @apply absolute bottom-0 right-0 rounded-tl-md;
 }
+
+/* Modal Overlay */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.7); /* Darker background for emphasis */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000; /* Ensure it's on top */
+}
+
+/* Modal Content */
+.modal-content {
+  background-color: white;
+  padding: 40px;
+  border-radius: 10px;
+  width: 90vw; /* Takes up 90% of the screen width */
+  height: 80vh; /* Takes up 80% of the screen height */
+  max-width: 1000px;
+  box-shadow: 0px 4px 20px rgba(0, 0, 0, 0.2);
+  position: relative;
+  overflow-y: auto; /* Adds scrolling if content is too long */
+}
+
+.close-btn {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: none;
+  border: none;
+  font-size: 2rem;
+  cursor: pointer;
+}
+
+h1, h2 {
+  @apply font-bold text-lg;
+  color: #2c1010; /* Applying custom color directly */
+}
+
