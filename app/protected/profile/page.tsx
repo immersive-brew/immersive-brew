@@ -1,55 +1,39 @@
-"use client";
+import { createClient } from "@/utils/supabase/server"; // Server-side client creation
+import HeaderBar from "@/components/HeaderBar";
+import ProfileForm from "@/components/ProfileForm";
 
-import { SaveButton } from "@/components/save-button";
-import { createClient } from "@/utils/supabase/client"; // Updated import for client-side
-import { useEffect, useState } from 'react';
-import FetchDataSteps from "@/components/tutorial/FetchDataSteps";
-import Header from "@/components/Header";
-import { redirect } from "next/navigation";
+export default async function Page() {
+  const supabase = createClient();
+  
+  // Fetch the user and profile data on the server side
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-export default function Page() {
-    const supabase = createClient();
-    const [data, setData] = useState<any | null>(null);
-    const [id, setId] = useState<string | null>(null);
-    const [full_name, setFull_name] = useState<string | null>(null);
+  let profile = null;
 
-    useEffect(() => {
-        const getData = async () => {
-            const { data: { user } } = await supabase.auth.getUser();
+  if (user) {
+    const { data } = await supabase
+      .from("profiles")
+      .select()
+      .eq("id", user.id)
+      .single();
 
-            if (user) {
-                const { data } = await supabase
-                    .from('profiles')
-                    .select()
-                    .eq('id', user.id);
+    profile = data;
+  } else {
+    // Optionally redirect if no user is logged in
+    redirect("/login");
+  }
 
-                if (data) {
-                    setData(data[0]);
-                    setId(data[0].id);
-                    setFull_name(data[0].full_name);
-                }
-            }
-        };
-        getData();
-    }, [supabase]);
-
-    return (
-        <div>
-            
-            {/* Render your input field for fullName here */}
-            <input
-                type="text"
-                value={full_name || ''}
-                onChange={(e) => setFull_name(e.target.value)}
-            />
-            <SaveButton  
-                fullName={full_name}
-                id = {id} 
-                className="btn-primary"
-            >
-                Save
-            </SaveButton>
-        </div>
-        
-    );
+  return (
+    <div>
+      <HeaderBar />
+      <div>
+        <h2>Your current name: {profile?.full_name}</h2>
+        <p>Would you like to change your name?</p>
+        {/* Pass the profile data to the ProfileForm client component */}
+        <ProfileForm profile={profile} />
+      </div>
+    </div>
+  );
 }

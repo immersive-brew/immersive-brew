@@ -188,3 +188,26 @@ h1, h2 {
   color: #2c1010; /* Applying custom color directly */
 }
 
+.header-bar {
+  color: white;
+}
+
+.nav-list {
+  list-style: none;
+  display: flex;
+  gap: 1rem;
+}
+
+.nav-item {
+  margin-right: 1rem;
+}
+
+.nav-item a {
+  color: white;
+  text-decoration: none;
+  font-weight: bold;
+}
+
+.nav-item a:hover {
+  text-decoration: underline;
+}
