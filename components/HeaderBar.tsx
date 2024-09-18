@@ -8,7 +8,7 @@ export default function HeaderBar() {
       <nav>
         <ul className="nav-list">
           <li className="nav-item">
-            <Link href="/">Home</Link>
+            <Link href="/protected">Home</Link>
           </li>
           <li className="nav-item">
             <Link href="/protected/profile">Profile</Link>
