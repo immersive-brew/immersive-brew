@@ -24,7 +24,7 @@ export default function JournalEntry() {
   const fetchEntries = async () => {
     setLoading(true);
     const { data, error } = await supabase
-      .from('journal_entries')
+      .from('entries')
       .select(
         'id, created_at, temperature, coffee_weight, water_weight, grind_setting, overall_time'
       )
