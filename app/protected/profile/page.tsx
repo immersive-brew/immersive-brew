@@ -1,6 +1,7 @@
 import { createClient } from "@/utils/supabase/server"; // Server-side client creation
 import HeaderBar from "@/components/HeaderBar";
 import ProfileForm from "@/components/ProfileForm";
+import DeleteAccountButton from "@/components/DeleteAccountButton";
 
 export default async function Page() {
   const supabase = createClient();
@@ -33,6 +34,7 @@ export default async function Page() {
         <p>Would you like to change your name?</p>
         {/* Pass the profile data to the ProfileForm client component */}
         <ProfileForm profile={profile} />
+        <DeleteAccountButton />
       </div>
     </div>
   );
