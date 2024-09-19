@@ -1,8 +1,8 @@
-// JournalEntry.tsx (Client Component)
 'use client';
 
 import React, { useEffect, useState } from 'react';
 import { createClient } from '@supabase/supabase-js';
+import ManualEntryForm from './ManualEntryForm'; // Import the form for editing
 
 type JournalEntryType = {
   id: number;
@@ -17,6 +17,9 @@ type JournalEntryType = {
 export default function JournalEntry() {
   const [entries, setEntries] = useState<JournalEntryType[]>([]);
   const [loading, setLoading] = useState(true);
+  const [editingEntry, setEditingEntry] = useState<JournalEntryType | null>(null); // For editing entry
+  const [deleting, setDeleting] = useState<number | null>(null); // Track deleting entry
+
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
   const supabase = createClient(supabaseUrl, supabaseAnonKey);
@@ -48,6 +51,31 @@ export default function JournalEntry() {
     return `${String(minutes).padStart(2, '0')}:${String(remainingSeconds).padStart(2, '0')}`;
   };
 
+  const handleEdit = (entry: JournalEntryType) => {
+    setEditingEntry(entry); // Set the entry for editing
+  };
+
+  // Function to delete an entry
+  const handleDelete = async (id: number) => {
+    setDeleting(id); // Set the entry to deleting state
+    try {
+      const response = await fetch(`/api/entries/${id}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        // Refresh entries after deletion
+        fetchEntries();
+      } else {
+        console.error('Failed to delete entry');
+      }
+    } catch (error) {
+      console.error('Error deleting entry:', error);
+    } finally {
+      setDeleting(null); // Reset deleting state
+    }
+  };
+
   if (loading) {
     return <div>Loading entries...</div>;
   }
@@ -58,6 +86,11 @@ export default function JournalEntry() {
       <button onClick={fetchEntries} className="mb-4 px-4 py-2 bg-blue-500 text-white rounded">
         Refresh
       </button>
+
+      {editingEntry && (
+        <ManualEntryForm entry={editingEntry} onUpdate={fetchEntries} onCancel={() => setEditingEntry(null)} />
+      )}
+
       {entries.length === 0 ? (
         <div>No entries found.</div>
       ) : (
@@ -90,6 +123,24 @@ export default function JournalEntry() {
                 </div>
                 <div className="text-coffee-dark">
                   <strong>Overall Time:</strong> {entry.overall_time !== undefined ? formatTime(entry.overall_time) : 'N/A'}
+                </div>
+                <div className="flex justify-end space-x-2">
+                  {/* Edit Button */}
+                  <button
+                    className="text-blue-500 hover:underline"
+                    onClick={() => handleEdit(entry)}
+                  >
+                    Edit
+                  </button>
+
+                  {/* Delete Button */}
+                  <button
+                    className="text-red-500 hover:underline"
+                    onClick={() => handleDelete(entry.id)}
+                    disabled={deleting === entry.id} // Disable while deleting
+                  >
+                    {deleting === entry.id ? 'Deleting...' : 'Delete'}
+                  </button>
                 </div>
               </div>
             </div>
