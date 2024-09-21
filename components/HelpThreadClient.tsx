@@ -77,16 +77,17 @@ const HelpThreadClient = ({ initialThreads }) => {
   };
 
   const deleteThread = async (threadId: number) => {
+    // Remove the thread from local state
     const { error } = await supabase
       .from('threads')
       .delete()
       .eq('id', threadId);
 
     if (error) {
-      console.error('Error deleting thread:', error);
+      console.error('Error deleting thread:', error); // Handle error
     } else {
       setThreads(threads.filter(thread => thread.id !== threadId));
-      console.log('Deleted thread with ID:', threadId);
+      console.log('Deleted thread with ID:', threadId); // Handle success
     }
   };
 
@@ -94,7 +95,7 @@ const HelpThreadClient = ({ initialThreads }) => {
     <div className="container mx-auto p-4">
       <h1 className="text-2xl font-bold mb-4">Help Threads</h1>
 
-      <form onSubmit={createThread} className="mb-4">
+      <form onSubmit={createThread} className="mb-4"> { /* Create new thread */ }
         <input
           type="text"
           placeholder="Create a new help thread"
@@ -114,7 +115,7 @@ const HelpThreadClient = ({ initialThreads }) => {
 
       {errorMessage && <p className="text-red-500 mb-4">{errorMessage}</p>}
 
-      <div className="space-y-4">
+      <div className="space-y-4"> {/* Map all threads found */}
         {threads.map((thread) => (
           <div key={thread.id} className="border-3 border-brown-700 bg-gray-50 p-4 rounded">
             <h2 className="text-xl font-semibold">{thread.contents}</h2>
@@ -126,7 +127,7 @@ const HelpThreadClient = ({ initialThreads }) => {
               Delete Thread
             </button>
 
-            <ReplySection threadId={thread.id} addReply={addReply} />
+            <ReplySection threadId={thread.id} addReply={addReply} /> {/* Add the ReplySection component here */}
 
             <div className="mt-4">
               <h3 className="font-semibold">Replies:</h3>
