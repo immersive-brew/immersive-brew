@@ -3,11 +3,11 @@ import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 import { SubmitButton } from "@/components/submit-button";
 import { TextLink } from "@/components/text-link";
-import { Turnstile } from "@marsidev/react-turnstile";
+import { Turnstile } from "@marsidev/react-turnstile"; // use turnstile for human authentication
 
 export default function Login({ searchParams }: { searchParams: { message: string } }) {
-  const signIn = async (formData: FormData) => {
-    "use server";
+  const signIn = async (formData: FormData) => { // function to get user information from DB
+    "use server"; 
 
     const email = formData.get("email") as string;
     const password = formData.get("password") as string;
@@ -23,21 +23,21 @@ export default function Login({ searchParams }: { searchParams: { message: strin
     });
 
     if (error) {
-      return redirect("/login?message=Could not authenticate user");
+      return redirect("/login?message=Could not authenticate user"); // error message if user information is not correct or turnstile doesn't authenticate
     }
 
     return redirect("/protected");
   };
 
   return (
-    <div className="flex items-center justify-center h-screen">
+    <div className="flex items-center justify-center h-screen"> 
       <div className="w-full px-8 sm:max-w-md">
-        {/* Main form container */}
+        {/* Temporary container */}
       <div className="w-full max-w-md p-8 bg-[#dec2a6] rounded-md shadow-lg">
         <Link
           href="/"
           className="absolute left-8 top-8 py-2 px-4 rounded-md no-underline bg-btn-background hover:bg-btn-background-hover flex items-center group text-sm"
-        >
+        >{/* Temporary CSS  */}
           <svg
             xmlns="http://www.w3.org/2000/svg"
             width="24"
