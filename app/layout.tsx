@@ -1,5 +1,6 @@
 import { Poppins } from 'next/font/google'
 import './globals.css'
+import { ThemeProvider } from "@/components/ThemeProvider";
 
 const poppins = Poppins({
     subsets: ['latin'],
@@ -31,11 +32,13 @@ export default function RootLayout({
                     'bg-background text-foreground h-full ' + poppins.className
                 }
             >
-                <main
-                // className="min-h-screen flex flex-col items-center"
-                >
-                    {children}
-                </main>
+                <ThemeProvider>
+                    <main
+                    // className="min-h-screen flex flex-col items-center"
+                    >
+                        {children}
+                    </main>
+                </ThemeProvider>
             </body>
         </html>
     )

@@ -2,6 +2,8 @@ import { createClient } from "@/utils/supabase/server"; // Server-side client cr
 import HeaderBar from "@/components/HeaderBar";
 import ProfileForm from "@/components/ProfileForm";
 import DeleteAccountButton from "@/components/DeleteAccountButton";
+import ModeToggle from "@/components/DarkModeButton";
+
 
 export default async function Page() {
   const supabase = createClient();
@@ -29,6 +31,7 @@ export default async function Page() {
   return (
     <div>
       <HeaderBar />
+      <ModeToggle />
       <div className="w-full max-w-2xl bg-white shadow-md rounded-lg p-6 mt-8">
         <h2 className="text-2xl font-semibold mb-4 text-center">
           Your current name: <span className="font-bold">{profile?.full_name}</span>
