@@ -5,7 +5,7 @@ import DeleteAccountButton from "@/components/DeleteAccountButton";
 
 export default async function Page() {
   const supabase = createClient();
-  
+
   // Fetch the user and profile data on the server side
   const {
     data: { user },
@@ -29,12 +29,23 @@ export default async function Page() {
   return (
     <div>
       <HeaderBar />
-      <div>
-        <h2>Your current name: {profile?.full_name}</h2>
-        <p>Would you like to change your name?</p>
-        {/* Pass the profile data to the ProfileForm client component */}
-        <ProfileForm profile={profile} />
-        <DeleteAccountButton />
+      <div className="w-full max-w-2xl bg-white shadow-md rounded-lg p-6 mt-8">
+        <h2 className="text-2xl font-semibold mb-4 text-center">
+          Your current name: <span className="font-bold">{profile?.full_name}</span>
+        </h2>
+        <p className="text-center text-gray-600 mb-6">
+          Would you like to change your name?
+        </p>
+
+        {/* Profile Form */}
+        <div className="flex flex-col items-center">
+          <ProfileForm profile={profile} />
+        </div>
+
+        {/* Delete Account Section */}
+        <div className="flex flex-col items-center mt-6">
+          <DeleteAccountButton />
+        </div>
       </div>
     </div>
   );
