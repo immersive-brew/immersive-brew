@@ -69,12 +69,14 @@ export default async function StartBrewPage({ searchParams }) {
           </form>
           <div className="flex flex-col gap-4 items-center">
             {/* Start Button */}
-            <button
-              type="submit"
-              className="mt-6 bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded "
-            >
-              Start Brewing
-            </button>
+            <a href="/protected/journal/brew/start">
+              <button
+                type="submit"
+                className="mt-6 bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded "
+              >
+                Start Brewing
+              </button>
+            </a>
           </div>
         </div>
       </div>
