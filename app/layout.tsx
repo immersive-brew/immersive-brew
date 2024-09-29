@@ -1,6 +1,7 @@
 import { Poppins } from 'next/font/google'
 import './globals.css'
 import { ThemeProvider } from "@/components/ThemeProvider";
+import Navbar from '@/components/NavBar';
 
 const poppins = Poppins({
     subsets: ['latin'],
@@ -33,6 +34,7 @@ export default function RootLayout({
                 }
             >
                 <ThemeProvider>
+                    <Navbar />
                     <main
                     // className="min-h-screen flex flex-col items-center"
                     >
