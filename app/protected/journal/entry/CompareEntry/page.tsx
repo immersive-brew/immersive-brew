@@ -1,80 +1,32 @@
-import { useEffect, useState } from 'react';
-import AuthButton from "@/components/AuthButton";
-import { createClient } from '@supabase/supabase-js';
-import HeaderBar from "@/components/HeaderBar";
+import CompareEntry from '@/components/CompareEntryView'; // Assuming you have a CompareEntryView component
+import HeaderBar from '@/components/HeaderBar'; // Import the HeaderBar
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
+export default function CompareEntriesPage() {
+  // Mock data for the two entries to compare (you can replace this with actual data fetching logic)
+  const entry1 = {
+    id: 1,
+    title: 'Entry 1',
+    content: 'This is the content of the first entry.',
+  };
 
-export default function CompareEntries() {
-    const [entries, setEntries] = useState<any[]>([]);
-    const [comparison, setComparison] = useState<string | null>(null);
+  const entry2 = {
+    id: 2,
+    title: 'Entry 2',
+    content: 'This is the content of the second entry.',
+  };
 
-    useEffect(() => {
-        async function fetchEntries() {
-            const { data: fetchedEntries, error } = await supabase
-                .from('entries')
-                .select('id, created_at, temperature, coffee_weight, water_weight, grind_setting, overall_time');
+  return (
+    <div>
+      {/* Add HeaderBar at the top */}
+      <HeaderBar />
 
-            if (error) {
-                console.error('Error fetching journal entries:', error);
-            } else {
-                setEntries(fetchedEntries || []);
-            }
-        }
+      {/* Comparison section */}
+      <div className="comparison-section">
+        <h2>Compare Entries</h2>
 
-        fetchEntries();
-    }, []);
-
-    // Comparison logic
-    useEffect(() => {
-        if (entries.length > 1) {
-            const firstEntry = entries[0];
-            const lastEntry = entries[entries.length - 1];
-
-            const compareValues = (key: string) => {
-                const firstValue = firstEntry[key];
-                const lastValue = lastEntry[key];
-                if (firstValue === lastValue) {
-                    return `${key}: No change`;
-                }
-                return `${key}: Changed from ${firstValue} to ${lastValue}`;
-            };
-
-            const comparisonResults = `
-                ${compareValues('temperature')}\n
-                ${compareValues('coffee_weight')}\n
-                ${compareValues('water_weight')}\n
-                ${compareValues('grind_setting')}\n
-                ${compareValues('overall_time')}
-            `;
-
-            setComparison(comparisonResults);
-        }
-    }, [entries]);
-
-    return (
-        <>
-            <HeaderBar />
-            <nav className="w-full flex justify-center border-b border-b-foreground/10 h-16">
-                <div className="w-full max-w-4xl flex justify-between items-center p-3 text-sm">
-                    <AuthButton />
-                </div>
-            </nav>
-            <div className="p-4 max-w-4xl mx-auto">
-                <h1 className="text-2xl font-bold mb-4">Compare Coffee Journal Entries</h1>
-                {entries.length > 0 ? (
-                    <div>
-                        <h2 className="text-lg font-semibold">Comparison of First and Last Entries</h2>
-                        <pre className="bg-gray-100 p-4 rounded-md">
-                            {comparison}
-                        </pre>
-                    </div>
-                ) : (
-                    <div>No entries to compare.</div>
-                )}
-            </div>
-        </>
-    );
+        {/* Render the CompareEntry component to compare two entries */}
+        <CompareEntry entry1={entry1} entry2={entry2} />
+      </div>
+    </div>
+  );
 }
