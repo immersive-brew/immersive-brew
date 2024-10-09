@@ -3,6 +3,8 @@ import HeaderBar from "@/components/HeaderBar";
 import ProfileForm from "@/components/ProfileForm";
 import DeleteAccountButton from "@/components/DeleteAccountButton";
 import ModeToggle from "@/components/DarkModeButton";
+import { redirect } from 'next/navigation';
+
 
 
 export default async function Page() {
