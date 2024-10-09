@@ -17,6 +17,7 @@ const Navbar = () => {
     className="relative mx-auto flex w-fit rounded-full border-2 border-black bg-white p-1">
       <Tab setPosition={setPosition} href="/protected">Home</Tab>
       <Tab setPosition={setPosition} href="/protected/journal">Journal</Tab>
+      <Tab setPosition={setPosition} href="/protected/brewguides">BrewGuides</Tab>
       <Tab setPosition={setPosition} href="/protected/profile">Profile</Tab>
 
       <Cursor position={position}/>
