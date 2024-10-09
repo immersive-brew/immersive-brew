@@ -1,7 +1,6 @@
 
 import { createClient } from '@/utils/supabase/server';
 import HelpThreadClient from '@/components/HelpThreadClient'; // Import the client-side component
-import HeaderBar from "@/components/HeaderBar";
 import AuthButton from "@/components/AuthButton";
 
 // Fetching data from Supabase happens server-side in this async function

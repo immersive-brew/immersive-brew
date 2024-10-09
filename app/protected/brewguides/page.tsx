@@ -1,9 +1,7 @@
 // BrewGuides.tsx (Server Component)
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
-import Link from "next/link";
 import CardList from "@/components/CardList"; // Import the Client Component
-import HeaderBar from "@/components/HeaderBar"; // Import HeaderBar
 
 export default async function BrewGuides() {
   const supabase = createClient();
@@ -18,8 +16,6 @@ export default async function BrewGuides() {
   // Server side content and logic
   return (
     <div>
-      {/* Add the HeaderBar at the top */}
-      <HeaderBar />
 
       <h1>Brew Guides</h1>
       <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Vero repellendus tempore...</p>
