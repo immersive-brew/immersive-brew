@@ -3,7 +3,6 @@ import AuthButton from "@/components/AuthButton";
 import { createClient } from "@/utils/supabase/server";
 import RatioCalculator from "@/components/RatioCalculator";
 import { redirect } from "next/navigation";
-import HeaderBar from "@/components/HeaderBar";
 
 export default async function StartBrewPage({ searchParams }) {
   const supabase = createClient();
@@ -30,9 +29,6 @@ export default async function StartBrewPage({ searchParams }) {
 
   return (
     <div className="flex-1 w-full flex flex-col gap-20 items-center">
-      {/* Add the HeaderBar component here */}
-      <HeaderBar />
-
       <div className="w-full">
         {/* Navigation bar (Deploy and Auth buttons) */}
         <nav className="w-full flex justify-center border-b border-b-foreground/10 h-16">

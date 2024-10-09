@@ -3,6 +3,8 @@ import HeaderBar from "@/components/HeaderBar";
 import ProfileForm from "@/components/ProfileForm";
 import DeleteAccountButton from "@/components/DeleteAccountButton";
 import ModeToggle from "@/components/DarkModeButton";
+import { redirect } from 'next/navigation';
+
 
 
 export default async function Page() {
@@ -30,7 +32,6 @@ export default async function Page() {
 
   return (
     <div>
-      <HeaderBar />
       <ModeToggle />
       <div className="w-full max-w-2xl bg-white shadow-md rounded-lg p-6 mt-8">
         <h2 className="text-2xl font-semibold mb-4 text-center">
