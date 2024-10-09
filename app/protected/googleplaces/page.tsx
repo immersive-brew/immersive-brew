@@ -1,4 +1,3 @@
-import GooglePlacesSearch from "@/components/GooglePlacesSearch";
 import GooglePlacesRoastersSearch from "@/components/GooglePlacesRoastersSearch";
 
 export default function GooglePlaces() {

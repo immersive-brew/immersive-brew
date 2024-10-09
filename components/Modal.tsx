@@ -1,10 +1,15 @@
-// Modal.tsx
 import { useEffect } from 'react';
 
-export default function Modal({ title, content, onClose }) {
+interface ModalProps {
+  title: string;
+  content: string;
+  onClose: () => void;
+}
+
+export default function Modal({ title, content, onClose }: ModalProps) {
   // Close modal on ESC key press
   useEffect(() => {
-    const handleEscape = (e) => {
+    const handleEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
     };
     window.addEventListener('keydown', handleEscape);

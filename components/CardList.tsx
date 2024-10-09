@@ -1,10 +1,16 @@
-// CardList.tsx
-"use client"; 
+"use client";
 import { useState } from 'react';
 import Modal from "./Modal";
 
+// Define the structure of a card
+interface CardType {
+  title: string;
+  content: string;
+}
+
 export default function CardList() {
-  const [selectedCard, setSelectedCard] = useState(null); // track selected card
+  // Type the state to ensure selectedCard is either a CardType object or null
+  const [selectedCard, setSelectedCard] = useState<CardType | null>(null);
 
   return (
     <div className="card-list-container">
@@ -15,8 +21,8 @@ export default function CardList() {
           onClose={() => setSelectedCard(null)}
         />
       )}
-      
-      {/* Adding more cards */}
+
+      {/* Render cards */}
       <Card
         title="New member of the web dev team..."
         content="Lorem ipsum dolor sit amet consectetur adipisicing elit."
@@ -61,8 +67,14 @@ export default function CardList() {
   );
 }
 
+// Define the props for the Card component
+interface CardProps {
+  title: string;
+  content: string;
+  onClick: () => void;
+}
 
-function Card({ title, content, onClick }) {
+function Card({ title, content, onClick }: CardProps) {
   return (
     <div className="card" onClick={onClick}>
       <h3>{title}</h3>

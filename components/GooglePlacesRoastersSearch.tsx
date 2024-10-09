@@ -2,11 +2,23 @@
 import { useEffect, useState, useRef } from 'react';
 import Script from 'next/script';
 
+// Extend the global window interface to include `google`
+declare global {
+  interface Window {
+    google: any;
+  }
+}
+
+interface LocationType {
+  latitude: number | null;
+  longitude: number | null;
+}
+
 const GooglePlacesRoastersSearch = () => {
   const [roasters, setRoasters] = useState<any[]>([]);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
-  const [location, setLocation] = useState({ latitude: null, longitude: null });
+  const [location, setLocation] = useState<LocationType>({ latitude: null, longitude: null });
 
   const mapRef = useRef<HTMLDivElement | null>(null);  // Ref for the map div
   const mapInstance = useRef<any>(null);  // Ref to store the map instance
@@ -69,11 +81,12 @@ const GooglePlacesRoastersSearch = () => {
 
   // Function to update the map with markers
   const updateMap = (latitude: number, longitude: number, places: any[]) => {
-    if (!window.google || !mapRef.current) return;
+    // Ensure window.google is available before using it
+    if (typeof window.google === 'undefined' || !mapRef.current) return;
 
     if (!mapInstance.current) {
       // Create a new map if not initialized
-      mapInstance.current = new google.maps.Map(mapRef.current, {
+      mapInstance.current = new window.google.maps.Map(mapRef.current, {
         center: { lat: latitude, lng: longitude },
         zoom: 12,
       });
@@ -86,7 +99,7 @@ const GooglePlacesRoastersSearch = () => {
     clearMarkers();
 
     // Add a marker for the user's location
-    const userMarker = new google.maps.Marker({
+    const userMarker = new window.google.maps.Marker({
       position: { lat: latitude, lng: longitude },
       map: mapInstance.current,
       title: 'Your Location',
@@ -96,7 +109,7 @@ const GooglePlacesRoastersSearch = () => {
 
     // Add markers for each roaster
     places.forEach((place) => {
-      const marker = new google.maps.Marker({
+      const marker = new window.google.maps.Marker({
         position: {
           lat: place.geometry.location.lat,
           lng: place.geometry.location.lng,
@@ -106,7 +119,7 @@ const GooglePlacesRoastersSearch = () => {
       });
 
       // Add a click listener to the marker to display the roaster name
-      const infoWindow = new google.maps.InfoWindow({
+      const infoWindow = new window.google.maps.InfoWindow({
         content: `<h3>${place.name}</h3><p>${place.vicinity}</p>`,
       });
 

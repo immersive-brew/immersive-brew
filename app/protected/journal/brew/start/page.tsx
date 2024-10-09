@@ -4,7 +4,11 @@ import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 import BrewTimer from "@/components/BrewTimer"; // Import the client-side BrewTimer component
 
-export default async function StartBrewPage({ searchParams }) {
+interface StartBrewPageProps {
+  searchParams: Record<string, string | string[]>;
+}
+
+export default async function StartBrewPage({ searchParams }: StartBrewPageProps) {
   const supabase = createClient();
 
   // Fetch authenticated user
@@ -18,8 +22,8 @@ export default async function StartBrewPage({ searchParams }) {
   }
 
   // Parse water and coffee from the query params if they exist
-  const waterAmount = parseFloat(searchParams.waterAmount) || "";
-  const coffeeAmount = parseFloat(searchParams.coffeeAmount) || "";
+  const waterAmount = parseFloat(searchParams.waterAmount as string) || "";
+  const coffeeAmount = parseFloat(searchParams.coffeeAmount as string) || "";
 
   // Calculate the water-to-coffee ratio (if both values are provided)
   let ratio = "-";
@@ -40,8 +44,6 @@ export default async function StartBrewPage({ searchParams }) {
       </div>
 
       <div className="max-w-4xl w-full">
-        
-
         {/* Brew Timer */}
         <BrewTimer /> {/* This handles the timer functionality */}
       </div>

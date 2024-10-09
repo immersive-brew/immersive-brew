@@ -4,7 +4,11 @@ import { createClient } from "@/utils/supabase/server";
 import RatioCalculator from "@/components/RatioCalculator";
 import { redirect } from "next/navigation";
 
-export default async function StartBrewPage({ searchParams }) {
+interface StartBrewPageProps {
+  searchParams: Record<string, string | string[]>;
+}
+
+export default async function StartBrewPage({ searchParams }: StartBrewPageProps) {
   const supabase = createClient();
 
   // Fetch authenticated user
@@ -18,8 +22,8 @@ export default async function StartBrewPage({ searchParams }) {
   }
 
   // Parse water and coffee from the query params if they exist
-  const waterAmount = parseFloat(searchParams.waterAmount) || "";
-  const coffeeAmount = parseFloat(searchParams.coffeeAmount) || "";
+  const waterAmount = parseFloat(searchParams.waterAmount as string) || "";
+  const coffeeAmount = parseFloat(searchParams.coffeeAmount as string) || "";
 
   // Calculate the water-to-coffee ratio (if both values are provided)
   let ratio = "-";

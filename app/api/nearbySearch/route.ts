@@ -26,7 +26,7 @@ export async function GET(request: Request) {
     
     return NextResponse.json(response.data);
   } catch (error) {
-    console.error('Error fetching nearby places:', error.response?.data || error.message);
+    console.error('Error fetching nearby places:', (error as any).response?.data || (error as any).message);
     return NextResponse.json({ error: 'Failed to fetch nearby places' }, { status: 500 });
   }
 }

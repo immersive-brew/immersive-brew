@@ -20,32 +20,29 @@ export async function POST(request: Request) {
     const fileName = `${userId}-${Date.now()}.png`;
     console.log('Uploading to Supabase with file name:', fileName);
 
-    const { data, error } = await supabase.storage
+    const { data: uploadData, error: uploadError } = await supabase.storage
       .from('generated-images')
       .upload(`images/${fileName}`, Buffer.from(imageData, 'base64'), {
         contentType: 'image/png',
       });
 
     // Add logging for the Supabase response
-    console.log('Supabase upload response:', data, error);
+    console.log('Supabase upload response:', uploadData, uploadError);
 
-    if (error) {
-      console.error('Error during Supabase upload:', error);
+    if (uploadError) {
+      console.error('Error during Supabase upload:', uploadError);
       return NextResponse.json({ error: 'Error during upload' }, { status: 500 });
     }
 
     // Generate a public URL for the uploaded image
-    const { publicURL, error: urlError } = supabase.storage
+    const { data: urlData } = supabase.storage
       .from('generated-images')
       .getPublicUrl(`images/${fileName}`);
 
-    if (urlError) {
-      console.error('Error getting public URL:', urlError);
-      return NextResponse.json({ error: 'Error generating public URL' }, { status: 500 });
-    }
-
-    console.log('Generated public URL:', publicURL);
-    return NextResponse.json({ url: publicURL });
+    const publicUrl = urlData.publicUrl;
+    console.log('Generated public URL:', publicUrl);
+    
+    return NextResponse.json({ url: publicUrl });
   } catch (error) {
     console.error('Error in the POST handler:', error);
     return NextResponse.json({ error: 'Server error during image upload' }, { status: 500 });

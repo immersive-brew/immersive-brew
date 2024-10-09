@@ -3,12 +3,12 @@
 import { useState } from "react";
 
 export default function RatioCalculator() {
-  const [waterAmount, setWaterAmount] = useState("");
-  const [coffeeAmount, setCoffeeAmount] = useState("");
+  const [waterAmount, setWaterAmount] = useState<string>("");
+  const [coffeeAmount, setCoffeeAmount] = useState<string>("");
   const [ratio, setRatio] = useState("-");
 
   // Update the ratio when the water or coffee amount changes
-  const updateRatio = (water, coffee) => {
+  const updateRatio = (water: number, coffee: number) => {
     if (water && coffee && coffee !== 0) {
       setRatio((water / coffee).toFixed(2));
     } else {
@@ -16,16 +16,16 @@ export default function RatioCalculator() {
     }
   };
 
-  const handleWaterChange = (e) => {
+  const handleWaterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const water = parseFloat(e.target.value);
-    setWaterAmount(water);
-    updateRatio(water, coffeeAmount);
+    setWaterAmount(e.target.value);
+    updateRatio(water, parseFloat(coffeeAmount));
   };
 
-  const handleCoffeeChange = (e) => {
+  const handleCoffeeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const coffee = parseFloat(e.target.value);
-    setCoffeeAmount(coffee);
-    updateRatio(waterAmount, coffee);
+    setCoffeeAmount(e.target.value);
+    updateRatio(parseFloat(waterAmount), coffee);
   };
 
   return (

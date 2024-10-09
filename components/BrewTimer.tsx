@@ -4,13 +4,13 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 
 // Color interpolation function
-const interpolateColor = (startColor, endColor, factor) => {
-  const result = startColor.slice(1).match(/.{2}/g).map((c, i) => {
+const interpolateColor = (startColor: string, endColor: string, factor: number): string => {
+  const result = startColor.slice(1).match(/.{2}/g)?.map((c, i) => {
     const startValue = parseInt(c, 16);
-    const endValue = parseInt(endColor.slice(1).match(/.{2}/g)[i], 16);
+    const endValue = parseInt(endColor.slice(1).match(/.{2}/g)![i], 16);
     return Math.round(startValue + (endValue - startValue) * factor).toString(16).padStart(2, "0");
   });
-  return `#${result.join('')}`;
+  return `#${result?.join('')}`;
 };
 
 const stages = [
@@ -28,11 +28,12 @@ export default function BrewTimer() {
   const [currentStage, setCurrentStage] = useState(0);
   const [timeLeft, setTimeLeft] = useState(stages[0].duration);
   const [isActive, setIsActive] = useState(false);
-  const [startTime, setStartTime] = useState(null);
+  const [startTime, setStartTime] = useState<number | null>(null); // Allow null or number
   const [overallTime, setOverallTime] = useState(0);
 
   useEffect(() => {
-    let timer;
+    let timer: NodeJS.Timeout; // Explicitly typing timer
+
     if (isActive) {
       if (timeLeft > 0) {
         timer = setInterval(() => {
@@ -55,7 +56,8 @@ export default function BrewTimer() {
   }, [isActive, timeLeft, currentStage]);
 
   useEffect(() => {
-    let interval;
+    let interval: NodeJS.Timeout; // Explicitly typing interval
+
     if (isActive) {
       interval = setInterval(() => {
         if (startTime) {
@@ -69,7 +71,7 @@ export default function BrewTimer() {
 
   const startTimer = () => {
     setIsActive(true);
-    setStartTime(Date.now());
+    setStartTime(Date.now()); // Set the current timestamp
   };
 
   const resetTimer = () => {
@@ -77,14 +79,12 @@ export default function BrewTimer() {
     setCurrentStage(0);
     setTimeLeft(stages[0].duration);
     setOverallTime(0);
-    setStartTime(null);
+    setStartTime(null); // Reset startTime to null
   };
 
   // Helper function to format seconds into MM:SS
-  const formatTime = (seconds) => {
-    const mins = Math.floor(seconds / 60)
-      .toString()
-      .padStart(2, "0");
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60).toString().padStart(2, "0");
     const secs = (seconds % 60).toString().padStart(2, "0");
     return `${mins}:${secs}`;
   };
@@ -97,7 +97,7 @@ export default function BrewTimer() {
 
   // Determine the fill color: start with blue and gradually turn brown as stages progress
   const startColor = "#00bfff"; // Blue for the first stage
-  const endColor = "#6F4E37";   // Coffee brown for subsequent stages
+  const endColor = "#6F4E37"; // Coffee brown for subsequent stages
   const colorFactor = Math.min(currentStage / (stages.length - 1), 1); // Factor between 0 and 1
   const fillColor = interpolateColor(startColor, endColor, colorFactor);
 
@@ -107,7 +107,7 @@ export default function BrewTimer() {
   return (
     <div className="p-6 border rounded-lg shadow-md max-w-md mx-auto bg-white">
       <h2 className="text-2xl font-semibold text-center text-gray-800">Brew Timer</h2>
-      
+
       <div className="mt-6 space-y-6">
         {/* Current Stage */}
         <div className="text-center">
@@ -124,26 +124,19 @@ export default function BrewTimer() {
             </p>
           </div>
         )}
-        
+
         {/* Overall Time */}
         <div className="text-center">
           <p className="text-3xl font-bold text-gray-800">
             <strong>Overall Time:</strong> {formatTime(overallTime)}
           </p>
         </div>
-        
+
         {/* SVG Timer */}
         <div className="flex justify-center">
           <motion.svg width="200" height="200" viewBox="0 0 200 200">
             {/* Background Circle */}
-            <circle
-              cx="100"
-              cy="100"
-              r={r}
-              stroke="lightgray"
-              strokeWidth="5"
-              fill="none"
-            />
+            <circle cx="100" cy="100" r={r} stroke="lightgray" strokeWidth="5" fill="none" />
 
             {/* Filled Circle (animated water rising effect only for the first stage) */}
             <motion.circle
@@ -166,7 +159,7 @@ export default function BrewTimer() {
             <motion.circle
               cx="100"
               cy="100"
-              r={80}
+              r={r}
               stroke="#ff0055"
               strokeWidth="5"
               fill="none"
@@ -190,7 +183,7 @@ export default function BrewTimer() {
             </text>
           </motion.svg>
         </div>
-        
+
         {/* Control Buttons */}
         <div className="flex flex-col items-center gap-4">
           <button
