@@ -7,7 +7,7 @@ import { redirect } from "next/navigation";
 import BrewTimer from "@/components/BrewTimer";
 
 interface StartBrewProcessPageProps {
-  searchParams: Record<string, string | string[]>;
+  searchParams: Record<string, string | string[]>; // Ensure searchParams is correctly typed
 }
 
 interface RecipeStep {
@@ -36,7 +36,7 @@ export default async function StartBrewProcessPage({
 
   // Redirect to login if user is not authenticated
   if (!user) {
-    redirect("/login");
+    return redirect("/login");
   }
 
   // Parse parameters from the query
@@ -94,8 +94,8 @@ export default async function StartBrewProcessPage({
 
   // Fetch recipe details based on recipeId
   const { data: recipe, error: recipeError } = await supabase
-    .from<Recipe>("recipes") // Ensure your table name is 'recipes'
-    .select("id, name, description, steps") // Fetch steps as well
+    .from("recipes") // Use only the table row type, no need for the second type argument
+    .select("id, name, description, steps")
     .eq("id", recipeId)
     .single();
 
@@ -181,21 +181,15 @@ export default async function StartBrewProcessPage({
   // Calculate the water-to-coffee ratio
   const ratio = coffeeAmount !== 0 ? (waterAmount / coffeeAmount).toFixed(2) : "-";
 
-  // Optional: Add console logs for debugging
-  console.log("Recipe Data:", recipe);
-  console.log("Steps:", recipe.steps);
-
   return (
     <div className="flex-1 w-full flex flex-col gap-20 items-center">
-      <div className="w-full">
-        {/* Navigation bar */}
-        <nav className="w-full flex justify-center border-b border-b-foreground/10 h-16">
-          <div className="w-full max-w-4xl flex justify-between items-center p-3 text-sm">
-            <DeployButton />
-            <AuthButton />
-          </div>
-        </nav>
-      </div>
+      {/* Navigation bar */}
+      <nav className="w-full flex justify-center border-b border-b-foreground/10 h-16">
+        <div className="w-full max-w-4xl flex justify-between items-center p-3 text-sm">
+          <DeployButton />
+          <AuthButton />
+        </div>
+      </nav>
 
       <div className="max-w-4xl w-full">
         {/* Brew Details */}

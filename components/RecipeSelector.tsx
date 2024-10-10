@@ -8,7 +8,7 @@ interface Recipe {
   id: string;
   name: string;
   description: string;
-  steps: RecipeStep[]; // Assuming each recipe has an array of steps
+  steps: RecipeStep[];
 }
 
 interface RecipeStep {
@@ -34,14 +34,15 @@ const RecipeSelector: React.FC<RecipeSelectorProps> = ({ onSelect }) => {
       setError(null);
       try {
         const { data, error } = await supabase
-          .from<Recipe>("recipes") // Replace 'recipes' with your actual table name
-          .select("id, name, description, steps"); // Fetch steps as well
+          .from("recipes")
+          .select("id, name, description, steps");
 
         if (error) {
           throw error;
         }
 
-        setRecipes(data || []);
+        const recipes = (data || []) as Recipe[];
+        setRecipes(recipes);
       } catch (err) {
         console.error("Error fetching recipes:", err);
         setError("Failed to fetch recipes.");
