@@ -1,12 +1,9 @@
 import AuthButton from "@/components/AuthButton";
 import JournalEntry from "@/components/JournalEntry";
-import { createClient } from '@supabase/supabase-js';
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+import { createClient } from '@/utils/supabase/server';
 
 export default async function JournalPage() {
-  const supabase = createClient(supabaseUrl, supabaseAnonKey);
+  const supabase = createClient();
 
   const {
     data: { user },
