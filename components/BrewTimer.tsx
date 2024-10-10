@@ -1,51 +1,53 @@
-"use client"; // Ensure this component is client-side
+// components/BrewTimer.tsx
+"use client";
 
 import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
+import { motion, useAnimation, useMotionValue, animate } from "framer-motion";
 
-// Color interpolation function
-const interpolateColor = (startColor: string, endColor: string, factor: number): string => {
-  const result = startColor.slice(1).match(/.{2}/g)?.map((c, i) => {
-    const startValue = parseInt(c, 16);
-    const endValue = parseInt(endColor.slice(1).match(/.{2}/g)![i], 16);
-    return Math.round(startValue + (endValue - startValue) * factor).toString(16).padStart(2, "0");
-  });
-  return `#${result?.join('')}`;
-};
+interface RecipeStep {
+  weight: number | null;
+  duration: number; // Duration in seconds
+  step_type: string;
+  description: string;
+}
 
-const stages = [
-  { name: "First Pour/Bloom", duration: 30 }, // duration in seconds
-  { name: "Second Pour", duration: 30 },
-  { name: "Third Pour", duration: 30 },
-  { name: "Fourth Pour", duration: 30 },
-  { name: "Fifth Pour/Drawdown", duration: 90 },
-];
+interface BrewTimerProps {
+  stages: RecipeStep[]; // Receive stages as props
+}
 
-const r = 80; // radius of the circle
-const circumference = 2 * Math.PI * r; // calculate circumference
-
-export default function BrewTimer() {
+const BrewTimer: React.FC<BrewTimerProps> = ({ stages }) => {
   const [currentStage, setCurrentStage] = useState(0);
   const [timeLeft, setTimeLeft] = useState(stages[0].duration);
   const [isActive, setIsActive] = useState(false);
-  const [startTime, setStartTime] = useState<number | null>(null); // Allow null or number
   const [overallTime, setOverallTime] = useState(0);
 
+  const r = 80; // Radius of the circle
+  const circumference = 2 * Math.PI * r;
+
+  const circleCenterX = 100;
+  const circleCenterY = 100;
+  const circleTopY = circleCenterY - r; // 20
+  const circleBottomY = circleCenterY + r; // 180
+  const circleHeight = circleBottomY - circleTopY; // 160
+
+  // Controls for animations
+  const fillControls = useAnimation();
+  const outlineControls = useAnimation();
+  const fillColor = useMotionValue("#00bfff"); // Start with blue color
+
   useEffect(() => {
-    let timer: NodeJS.Timeout; // Explicitly typing timer
+    let timer: NodeJS.Timeout;
 
     if (isActive) {
       if (timeLeft > 0) {
         timer = setInterval(() => {
           setTimeLeft((prev) => prev - 1);
+          setOverallTime((prev) => prev + 1);
         }, 1000);
       } else if (timeLeft === 0 && currentStage < stages.length - 1) {
         // Move to the next stage
-        setCurrentStage((prevStage) => {
-          const nextStage = prevStage + 1;
-          setTimeLeft(stages[nextStage].duration);
-          return nextStage;
-        });
+        setCurrentStage((prevStage) => prevStage + 1);
+        setTimeLeft(stages[currentStage + 1].duration);
       } else if (timeLeft === 0 && currentStage === stages.length - 1) {
         // Timer completed
         setIsActive(false);
@@ -53,25 +55,66 @@ export default function BrewTimer() {
     }
 
     return () => clearInterval(timer);
-  }, [isActive, timeLeft, currentStage]);
+  }, [isActive, timeLeft, currentStage, stages]);
 
   useEffect(() => {
-    let interval: NodeJS.Timeout; // Explicitly typing interval
-
     if (isActive) {
-      interval = setInterval(() => {
-        if (startTime) {
-          setOverallTime(Math.floor((Date.now() - startTime) / 1000));
-        }
-      }, 1000);
-    }
+      // Animate the fill during the first stage
+      if (currentStage === 0) {
+        fillControls.start({
+          y: circleTopY,
+          transition: {
+            duration: stages[0].duration,
+            ease: "linear",
+          },
+        });
 
-    return () => clearInterval(interval);
-  }, [isActive, startTime]);
+        // Animate fill color interpolation over time
+        animateColorInterpolation(stages[0].duration);
+      }
+      // Animate the outline for each stage
+      outlineControls.start({
+        strokeDashoffset:
+          circumference * (1 - timeLeft / stages[currentStage].duration),
+        transition: {
+          duration: 1,
+          ease: "linear",
+        },
+      });
+    } else {
+      // Reset animations when not active
+      fillControls.set({ y: circleBottomY });
+      outlineControls.set({ strokeDashoffset: 0 });
+      fillColor.set("#00bfff"); // Reset fill color to start color
+    }
+  }, [
+    isActive,
+    timeLeft,
+    currentStage,
+    stages,
+    fillControls,
+    outlineControls,
+    circumference,
+    fillColor,
+    circleTopY,
+    circleBottomY,
+  ]);
+
+  const animateColorInterpolation = (duration: number) => {
+    const startColor = "#00bfff"; // Blue
+    const endColor = "#6F4E37"; // Coffee brown
+
+    animate(0, 1, {
+      duration: duration,
+      ease: "linear",
+      onUpdate: (latest) => {
+        fillColor.set(interpolateColor(startColor, endColor, latest));
+      },
+    });
+  };
 
   const startTimer = () => {
     setIsActive(true);
-    setStartTime(Date.now()); // Set the current timestamp
   };
 
   const resetTimer = () => {
@@ -79,40 +122,37 @@ export default function BrewTimer() {
     setCurrentStage(0);
     setTimeLeft(stages[0].duration);
     setOverallTime(0);
-    setStartTime(null); // Reset startTime to null
+    fillControls.set({ y: circleBottomY });
+    outlineControls.set({ strokeDashoffset: 0 });
+    fillColor.set("#00bfff"); // Reset fill color to start color
   };
 
   // Helper function to format seconds into MM:SS
   const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60).toString().padStart(2, "0");
-    const secs = (seconds % 60).toString().padStart(2, "0");
+    const mins = Math.floor(seconds / 60)
+      .toString()
+      .padStart(2, "0");
+    const secs = (seconds % 60)
+      .toString()
+      .padStart(2, "0");
     return `${mins}:${secs}`;
   };
 
-  // Calculate the current strokeDashoffset based on time left
-  const strokeDashoffset = (timeLeft / stages[currentStage].duration) * circumference;
-
-  // Calculate fill height based on time left (from 0 to full height as time decreases)
-  const fillPercentage = (1 - timeLeft / stages[currentStage].duration) * 100;
-
-  // Determine the fill color: start with blue and gradually turn brown as stages progress
-  const startColor = "#00bfff"; // Blue for the first stage
-  const endColor = "#6F4E37"; // Coffee brown for subsequent stages
-  const colorFactor = Math.min(currentStage / (stages.length - 1), 1); // Factor between 0 and 1
-  const fillColor = interpolateColor(startColor, endColor, colorFactor);
-
   // Display the next stage and its duration if it exists
-  const nextStage = currentStage < stages.length - 1 ? stages[currentStage + 1] : null;
+  const nextStage =
+    currentStage < stages.length - 1 ? stages[currentStage + 1] : null;
 
   return (
     <div className="p-6 border rounded-lg shadow-md max-w-md mx-auto bg-white">
-      <h2 className="text-2xl font-semibold text-center text-gray-800">Brew Timer</h2>
+      <h2 className="text-2xl font-semibold text-center text-gray-800">
+        Brew Timer
+      </h2>
 
       <div className="mt-6 space-y-6">
         {/* Current Stage */}
         <div className="text-center">
           <p className="text-lg text-gray-700">
-            <strong>Current Stage:</strong> {stages[currentStage].name}
+            <strong>Current Stage:</strong> {stages[currentStage].description}
           </p>
         </div>
 
@@ -120,7 +160,8 @@ export default function BrewTimer() {
         {nextStage && (
           <div className="text-center">
             <p className="text-lg text-gray-600">
-              <strong>Next Stage:</strong> {nextStage.name} ({nextStage.duration}s)
+              <strong>Next Stage:</strong> {nextStage.description} (
+              {formatTime(nextStage.duration)})
             </p>
           </div>
         )}
@@ -134,46 +175,55 @@ export default function BrewTimer() {
 
         {/* SVG Timer */}
         <div className="flex justify-center">
-          <motion.svg width="200" height="200" viewBox="0 0 200 200">
-            {/* Background Circle */}
-            <circle cx="100" cy="100" r={r} stroke="lightgray" strokeWidth="5" fill="none" />
+          <svg width="200" height="200" viewBox="0 0 200 200">
+            <defs>
+              {/* Clip Path for Water Filling Effect */}
+              <clipPath id="clip-circle">
+                <circle cx={circleCenterX} cy={circleCenterY} r={r} />
+              </clipPath>
+            </defs>
 
-            {/* Filled Circle (animated water rising effect only for the first stage) */}
-            <motion.circle
-              cx="100"
-              cy="100"
+            {/* Background Circle */}
+            <circle
+              cx={circleCenterX}
+              cy={circleCenterY}
               r={r}
-              stroke={fillColor}
+              stroke="lightgray"
               strokeWidth="5"
-              fill={fillColor}
-              clipPath="inset(100% 0 0 0)" // start clipped
-              animate={
-                currentStage === 0
-                  ? { clipPath: `inset(${100 - fillPercentage}% 0 0 0)` }
-                  : { clipPath: `inset(0% 0 0 0)` } // fully filled after the first stage
-              }
-              transition={{ duration: 1, ease: "linear" }}
+              fill="none"
             />
 
-            {/* Outline circle for animation */}
+            {/* Water Fill Animation (First Stage Only) */}
+            {currentStage === 0 && (
+              <motion.rect
+                x={circleCenterX - r}
+                y={circleBottomY}
+                width={r * 2}
+                height={circleHeight}
+                clipPath="url(#clip-circle)"
+                animate={fillControls}
+                initial={{ y: circleBottomY }}
+                style={{ fill: fillColor }}
+              />
+            )}
+
+            {/* Outline Circle */}
             <motion.circle
-              cx="100"
-              cy="100"
+              cx={circleCenterX}
+              cy={circleCenterY}
               r={r}
-              stroke="#ff0055"
+              stroke="#000000" // Black outline
               strokeWidth="5"
               fill="none"
               strokeDasharray={circumference}
-              strokeDashoffset={strokeDashoffset}
-              initial={false}
-              animate={{ strokeDashoffset }}
-              transition={{ duration: 1, ease: "linear" }}
+              initial={{ strokeDashoffset: circumference }}
+              animate={outlineControls}
             />
 
-            {/* Text inside the circle */}
+            {/* Text Inside the Circle */}
             <text
-              x="100"
-              y="105"
+              x={circleCenterX}
+              y={circleCenterY + 5}
               textAnchor="middle"
               fontSize="32"
               fill="#333"
@@ -181,7 +231,7 @@ export default function BrewTimer() {
             >
               {formatTime(timeLeft)}
             </text>
-          </motion.svg>
+          </svg>
         </div>
 
         {/* Control Buttons */}
@@ -207,4 +257,35 @@ export default function BrewTimer() {
       </div>
     </div>
   );
-}
+};
+
+// Helper function to interpolate colors
+const interpolateColor = (
+  startColor: string,
+  endColor: string,
+  factor: number
+): string => {
+  const hex = (x: number) => {
+    const hexVal = Math.round(x).toString(16);
+    return hexVal.length === 1 ? "0" + hexVal : hexVal;
+  };
+
+  const start = {
+    r: parseInt(startColor.slice(1, 3), 16),
+    g: parseInt(startColor.slice(3, 5), 16),
+    b: parseInt(startColor.slice(5, 7), 16),
+  };
+  const end = {
+    r: parseInt(endColor.slice(1, 3), 16),
+    g: parseInt(endColor.slice(3, 5), 16),
+    b: parseInt(endColor.slice(5, 7), 16),
+  };
+
+  const r = start.r + factor * (end.r - start.r);
+  const g = start.g + factor * (end.g - start.g);
+  const b = start.b + factor * (end.b - start.b);
+
+  return `#${hex(r)}${hex(g)}${hex(b)}`;
+};
+
+export default BrewTimer;

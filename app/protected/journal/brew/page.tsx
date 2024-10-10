@@ -1,8 +1,10 @@
+// pages/start-brew.tsx (or the appropriate path)
 import DeployButton from "@/components/DeployButton";
 import AuthButton from "@/components/AuthButton";
 import { createClient } from "@/utils/supabase/server";
 import RatioCalculator from "@/components/RatioCalculator";
 import { redirect } from "next/navigation";
+import RecipeSelector from "@/components/RecipeSelector"; // Import the client component
 
 interface StartBrewPageProps {
   searchParams: Record<string, string | string[]>;
@@ -19,16 +21,6 @@ export default async function StartBrewPage({ searchParams }: StartBrewPageProps
   // Redirect to login if user is not authenticated
   if (!user) {
     return redirect("/login");
-  }
-
-  // Parse water and coffee from the query params if they exist
-  const waterAmount = parseFloat(searchParams.waterAmount as string) || "";
-  const coffeeAmount = parseFloat(searchParams.coffeeAmount as string) || "";
-
-  // Calculate the water-to-coffee ratio (if both values are provided)
-  let ratio = "-";
-  if (waterAmount && coffeeAmount && coffeeAmount !== 0) {
-    ratio = (waterAmount / coffeeAmount).toFixed(2);
   }
 
   return (
@@ -52,11 +44,25 @@ export default async function StartBrewPage({ searchParams }: StartBrewPageProps
 
         {/* Coffee Form for Manual Brewing */}
         <div className="mt-8">
-          <form action="/" method="GET" className="flex flex-col gap-4 items-center">
+          <form
+            action="/protected/journal/brew/start" // Updated action
+            method="GET" // You can change to "POST" if preferred
+            className="flex flex-col gap-4 items-center"
+          >
             {/* Brew Method */}
             <div className="flex flex-col">
-              <label htmlFor="brewMethod" className="font-semibold">Brew Method</label>
-              <select id="brewMethod" className="p-2 border rounded">
+              <label htmlFor="brewMethod" className="font-semibold">
+                Brew Method
+              </label>
+              <select
+                id="brewMethod"
+                name="brewMethod" // Added name attribute
+                className="p-2 border rounded w-80"
+                required
+              >
+                <option value="" disabled>
+                  -- Choose a Brew Method --
+                </option>
                 <option value="v60">V60</option>
                 <option value="aeropress">AeroPress</option>
                 <option value="chemex">Chemex</option>
@@ -64,20 +70,20 @@ export default async function StartBrewPage({ searchParams }: StartBrewPageProps
               </select>
             </div>
 
+            {/* Recipe Selector */}
+            <RecipeSelector />
+
+            {/* Ratio Calculator */}
             <RatioCalculator />
 
-          </form>
-          <div className="flex flex-col gap-4 items-center">
             {/* Start Button */}
-            <a href="/protected/journal/brew/start">
-              <button
-                type="submit"
-                className="mt-6 bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded "
-              >
-                Start Brewing
-              </button>
-            </a>
-          </div>
+            <button
+              type="submit" // Changed to submit button
+              className="mt-6 bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"
+            >
+              Start Brewing
+            </button>
+          </form>
         </div>
       </div>
 
