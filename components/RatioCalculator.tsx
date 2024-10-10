@@ -1,3 +1,4 @@
+// components/RatioCalculator.tsx
 "use client"; // Make this a client-side component
 
 import { useState } from "react";
@@ -30,39 +31,45 @@ export default function RatioCalculator() {
 
   return (
     <div className="mt-8">
-      <form className="flex flex-col gap-4 items-center">
-        {/* Water Amount */}
-        <div className="flex flex-col">
-          <label htmlFor="waterAmount" className="font-semibold">Water (in grams)</label>
-          <input
-            type="number"
-            id="waterAmount"
-            name="waterAmount"
-            value={waterAmount}
-            onChange={handleWaterChange}
-            className="p-2 border rounded"
-            placeholder="e.g., 250"
-            min="1"
-            max="1000"
-          />
-        </div>
+      {/* Removed the <form> tag here */}
+      
+      {/* Water Amount */}
+      <div className="flex flex-col">
+        <label htmlFor="waterAmount" className="font-semibold">
+          Water (in grams)
+        </label>
+        <input
+          type="number"
+          id="waterAmount"
+          name="waterAmount"
+          value={waterAmount}
+          onChange={handleWaterChange}
+          className="p-2 border rounded"
+          placeholder="e.g., 250"
+          min="1"
+          max="1000"
+          required
+        />
+      </div>
 
-        {/* Coffee Amount */}
-        <div className="flex flex-col">
-          <label htmlFor="coffeeAmount" className="font-semibold">Coffee (in grams)</label>
-          <input
-            type="number"
-            id="coffeeAmount"
-            name="coffeeAmount"
-            value={coffeeAmount}
-            onChange={handleCoffeeChange}
-            className="p-2 border rounded"
-            placeholder="e.g., 15"
-            min="1"
-            max="100"
-          />
-        </div>
-      </form>
+      {/* Coffee Amount */}
+      <div className="flex flex-col">
+        <label htmlFor="coffeeAmount" className="font-semibold">
+          Coffee (in grams)
+        </label>
+        <input
+          type="number"
+          id="coffeeAmount"
+          name="coffeeAmount"
+          value={coffeeAmount}
+          onChange={handleCoffeeChange}
+          className="p-2 border rounded"
+          placeholder="e.g., 15"
+          min="1"
+          max="100"
+          required
+        />
+      </div>
 
       {/* Display Water-to-Coffee Ratio */}
       <div className="mt-8 text-center">
