@@ -1,50 +1,50 @@
-"use client";
+'use client';
 import React, { useState } from 'react';
 
-const coffeeRecommendations = {
-  "Dull": {
+const coffeeRecommendations: Record<string, { advice: string; output: string }> = {
+  Dull: {
     advice: "Use a finer grind and extract more.",
     output: "Richer, more complex cup of coffee."
   },
-  "Savoury": {
+  Savoury: {
     advice: "Use a finer grind or more brew time.",
     output: "More balanced and flavorful."
   },
-  "Powdery": {
+  Powdery: {
     advice: "Use a coarser grind or less coffee.",
     output: "More clarity and sweetness."
   },
-  "Bitter": {
+  Bitter: {
     advice: "Extract Less, Use More Coffee.",
     output: "Richer, Fruitier Cup of Coffee."
   },
-  "Strong": {
+  Strong: {
     advice: "Use less coffee or more water.",
     output: "Milder, less overwhelming taste."
   },
-  "Heavy": {
+  Heavy: {
     advice: "Reduce brew time or coffee amount.",
     output: "A smoother, lighter cup."
   },
-  "Pleasant": {
+  Pleasant: {
     advice: "Perfect extraction! Keep brewing the same.",
     output: "The best possible flavor!"
   },
-  "Intense": {
+  Intense: {
     advice: "Use a coarser grind and less coffee.",
     output: "Balanced, less overpowering."
   },
-  "Overwhelming": {
+  Overwhelming: {
     advice: "Extract less, use a coarser grind.",
     output: "Balanced and less bitter."
   }
 };
 
 const CoffeeWheel: React.FC = () => {
-  const [selectedTaste, setSelectedTaste] = useState<string>('Bitter');
+  const [selectedTaste, setSelectedTaste] = useState<keyof typeof coffeeRecommendations>('Bitter');
 
   const handleTasteChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-    setSelectedTaste(event.target.value);
+    setSelectedTaste(event.target.value as keyof typeof coffeeRecommendations);
   };
 
   const { advice, output } = coffeeRecommendations[selectedTaste];

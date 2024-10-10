@@ -153,7 +153,7 @@ export default function RecipeForm({ onSubmit, onCancel }: RecipeFormProps) {
     }
 
     // Validate steps
-    for (const [index, step] of steps.entries()) {
+    steps.forEach((step, index) => {
       if (!step.description.trim() || step.duration === undefined) {
         setMessage({ type: 'error', text: `Please fill out all required fields for Step ${index + 1}.` });
         setLoading(false);
@@ -167,7 +167,7 @@ export default function RecipeForm({ onSubmit, onCancel }: RecipeFormProps) {
         setLoading(false);
         return;
       }
-    }
+    });
 
     // Check if total weight equals 1
     if (Math.abs(totalWeight - 1) > 0.0001) { // Allowing a small epsilon for floating point precision
