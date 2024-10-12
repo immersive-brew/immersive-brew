@@ -9,6 +9,7 @@ interface Recipe {
   name: string;
   description: string;
   steps: RecipeStep[];
+  brew_method: string;
 }
 
 interface RecipeStep {
@@ -35,7 +36,7 @@ const RecipeSelector: React.FC<RecipeSelectorProps> = ({ onSelect }) => {
       try {
         const { data, error } = await supabase
           .from("recipes")
-          .select("id, name, description, steps");
+          .select("id, name, description, steps, brew_method");
 
         if (error) {
           throw error;
@@ -85,7 +86,7 @@ const RecipeSelector: React.FC<RecipeSelectorProps> = ({ onSelect }) => {
         </option>
         {recipes.map((recipe) => (
           <option key={recipe.id} value={recipe.id}>
-            {recipe.name} - {recipe.description}
+            {recipe.name} - {recipe.description} - Method: {recipe.brew_method}
           </option>
         ))}
       </select>

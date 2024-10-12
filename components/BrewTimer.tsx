@@ -1,8 +1,9 @@
-// components/BrewTimer.tsx
 "use client";
 
 import { useState, useEffect } from "react";
 import { motion, useAnimation, useMotionValue, animate } from "framer-motion";
+import { createClient } from "@/utils/supabase/client"; // Importing Supabase client
+import { useRouter } from "next/navigation";
 
 interface RecipeStep {
   weight: number | null;
@@ -13,13 +14,23 @@ interface RecipeStep {
 
 interface BrewTimerProps {
   stages: RecipeStep[]; // Receive stages as props
+  recipeId: number;     // Add recipeId to identify the recipe
+  temperature: number;  // Add temperature prop
+  grindSetting: number; // Add grindSetting prop
+  waterAmount: number;  // Add waterAmount prop
+  coffeeAmount: number; // Add coffeeAmount prop
 }
 
-const BrewTimer: React.FC<BrewTimerProps> = ({ stages }) => {
+const supabase = createClient();
+
+const BrewTimer: React.FC<BrewTimerProps> = ({ stages, recipeId, temperature, grindSetting, waterAmount, coffeeAmount }) => {
   const [currentStage, setCurrentStage] = useState(0);
   const [timeLeft, setTimeLeft] = useState(stages[0].duration);
   const [isActive, setIsActive] = useState(false);
   const [overallTime, setOverallTime] = useState(0);
+  const [isFinished, setIsFinished] = useState(false);
+
+  const router = useRouter();
 
   const r = 80; // Radius of the circle
   const circumference = 2 * Math.PI * r;
@@ -39,19 +50,20 @@ const BrewTimer: React.FC<BrewTimerProps> = ({ stages }) => {
     let timer: NodeJS.Timeout;
 
     if (isActive) {
-      if (timeLeft > 0) {
-        timer = setInterval(() => {
+      timer = setInterval(() => {
+        setOverallTime((prev) => prev + 1);
+
+        if (timeLeft > 0) {
           setTimeLeft((prev) => prev - 1);
-          setOverallTime((prev) => prev + 1);
-        }, 1000);
-      } else if (timeLeft === 0 && currentStage < stages.length - 1) {
-        // Move to the next stage
-        setCurrentStage((prevStage) => prevStage + 1);
-        setTimeLeft(stages[currentStage + 1].duration);
-      } else if (timeLeft === 0 && currentStage === stages.length - 1) {
-        // Timer completed
-        setIsActive(false);
-      }
+        } else if (currentStage < stages.length - 1) {
+          // Move to the next stage
+          setCurrentStage((prevStage) => prevStage + 1);
+          setTimeLeft(stages[currentStage + 1].duration);
+        } else {
+          // Continue counting overallTime even after last stage
+          setTimeLeft(0);
+        }
+      }, 1000);
     }
 
     return () => clearInterval(timer);
@@ -119,12 +131,44 @@ const BrewTimer: React.FC<BrewTimerProps> = ({ stages }) => {
 
   const resetTimer = () => {
     setIsActive(false);
+    setIsFinished(false);
     setCurrentStage(0);
     setTimeLeft(stages[0].duration);
     setOverallTime(0);
     fillControls.set({ y: circleBottomY });
     outlineControls.set({ strokeDashoffset: 0 });
     fillColor.set("#00bfff"); // Reset fill color to start color
+  };
+
+  const finishBrew = async () => {
+    setIsActive(false);
+    setIsFinished(true);
+
+    // Prepare data to insert into Supabase
+    const entryData = {
+      recipeid: recipeId,
+      overall_time: overallTime,
+      temperature: temperature,
+      grind_setting: grindSetting,
+      water_weight: waterAmount,
+      coffee_weight: coffeeAmount,
+    };
+
+    try {
+      const { data, error } = await supabase.from("entries").insert([entryData]);
+
+      if (error) {
+        console.error("Error inserting data:", error);
+        alert("An error occurred while saving your brew data.");
+      } else {
+        alert("Brew data saved successfully!");
+        // Optionally redirect or perform other actions
+        router.push("/protected/journal"); // Replace with your desired route
+      }
+    } catch (error) {
+      console.error("Unexpected error:", error);
+      alert("An unexpected error occurred.");
+    }
   };
 
   // Helper function to format seconds into MM:SS
@@ -152,7 +196,8 @@ const BrewTimer: React.FC<BrewTimerProps> = ({ stages }) => {
         {/* Current Stage */}
         <div className="text-center">
           <p className="text-lg text-gray-700">
-            <strong>Current Stage:</strong> {stages[currentStage].description}
+            <strong>Current Stage:</strong>{" "}
+            {stages[currentStage].description}
           </p>
         </div>
 
@@ -236,23 +281,32 @@ const BrewTimer: React.FC<BrewTimerProps> = ({ stages }) => {
 
         {/* Control Buttons */}
         <div className="flex flex-col items-center gap-4">
-          <button
-            onClick={startTimer}
-            className={`w-full font-bold py-2 px-4 rounded ${
-              isActive
-                ? "bg-blue-300 text-white cursor-not-allowed"
-                : "bg-blue-500 hover:bg-blue-600 text-white"
-            }`}
-            disabled={isActive} // Disable the button when the timer is active
-          >
-            Start
-          </button>
-          <button
-            onClick={resetTimer}
-            className="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded"
-          >
-            Reset
-          </button>
+          {!isActive && !isFinished && (
+            <button
+              onClick={startTimer}
+              className="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"
+            >
+              Start
+            </button>
+          )}
+
+          {isActive && (
+            <button
+              onClick={finishBrew}
+              className="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded animate-pulse"
+            >
+              Finish
+            </button>
+          )}
+
+          {(isFinished || isActive) && (
+            <button
+              onClick={resetTimer}
+              className="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded"
+            >
+              Reset
+            </button>
+          )}
         </div>
       </div>
     </div>

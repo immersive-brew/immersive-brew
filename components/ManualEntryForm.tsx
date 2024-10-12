@@ -1,20 +1,27 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { createClient } from '@/utils/supabase/client';
 
 type JournalEntryType = {
-  id: number;
+  id: string; // Assuming 'id' is UUID
   temperature: number;
   coffee_weight: number;
   water_weight: number;
   grind_setting: string;
   overall_time: number;
+  recipeid?: string; // 'recipeid' is UUID
+};
+
+type RecipeType = {
+  id: string; // UUID
+  name: string;
 };
 
 interface ManualEntryFormProps {
-  entry?: JournalEntryType; // Optional for editing an existing entry
-  onUpdate?: () => void; // Callback to refresh entries after update
-  onCancel?: () => void; // Callback to cancel editing
+  entry?: JournalEntryType;
+  onUpdate?: () => void;
+  onCancel?: () => void;
 }
 
 export default function ManualEntryForm({ entry, onUpdate, onCancel }: ManualEntryFormProps) {
@@ -25,12 +32,39 @@ export default function ManualEntryForm({ entry, onUpdate, onCancel }: ManualEnt
     grindSetting: '',
     minutes: '',
     seconds: '',
+    recipeId: '', // Keep as string
   });
 
+  const [recipes, setRecipes] = useState<RecipeType[]>([]);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-  // Prepopulate form with existing data from the entry
+  // Initialize Supabase client
+  const supabase = createClient();
+
+  // Fetch all recipes from the database
+  const fetchRecipes = async () => {
+    const { data, error } = await supabase
+      .from('recipes') // Ensure the table name is correct
+      .select('id, name')
+      .order('name', { ascending: true });
+
+    if (error) {
+      console.error('Error fetching recipes:', error);
+      setMessage({ type: 'error', text: 'Failed to load recipes. Please try again.' });
+    } else if (data && data.length > 0) {
+      console.log('Fetched recipes:', data);
+      setRecipes(data);
+    } else {
+      console.warn('No recipes found in the database');
+      setMessage({ type: 'error', text: 'No recipes available. Please add a recipe first.' });
+    }
+  };
+
+  useEffect(() => {
+    fetchRecipes();
+  }, []);
+
   useEffect(() => {
     if (entry) {
       const minutes = Math.floor(entry.overall_time / 60);
@@ -42,11 +76,11 @@ export default function ManualEntryForm({ entry, onUpdate, onCancel }: ManualEnt
         grindSetting: entry.grind_setting,
         minutes: minutes.toString(),
         seconds: seconds.toString(),
+        recipeId: entry.recipeid || '', // No conversion needed
       });
     }
   }, [entry]);
 
-  // Handle form field changes
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setFormData((prev) => ({
       ...prev,
@@ -54,10 +88,18 @@ export default function ManualEntryForm({ entry, onUpdate, onCancel }: ManualEnt
     }));
   };
 
+  // Function to handle form submission
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
     setMessage(null);
+
+    // Validate recipe selection
+    if (formData.recipeId === '') {
+      setMessage({ type: 'error', text: 'Please select a recipe.' });
+      setLoading(false);
+      return;
+    }
 
     // Convert minutes and seconds to total seconds
     let totalSeconds = 0;
@@ -75,37 +117,50 @@ export default function ManualEntryForm({ entry, onUpdate, onCancel }: ManualEnt
       water_weight: Number(formData.waterWeight),
       grind_setting: formData.grindSetting,
       overall_time: totalSeconds,
+      recipeid: formData.recipeId, // Pass as string (UUID)
     };
 
-    const url = entry ? `/api/entries/${entry.id}` : '/api/entries'; // Use the entry ID for updating if available
+    console.log('Updated data:', updatedData);
 
     try {
-      const response = await fetch(url, {
-        method: entry ? 'PUT' : 'POST', // Use PUT for editing, POST for new entry
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(updatedData),
-      });
+      let response;
+      if (entry) {
+        response = await supabase.from('entries').update(updatedData).eq('id', entry.id);
+      } else {
+        response = await supabase.from('entries').insert([updatedData]);
+      }
 
-      const result = await response.json();
+      if (response.error) {
+        console.error('Error submitting the form:', response.error);
+        setMessage({ type: 'error', text: response.error.message || 'Failed to submit the entry.' });
+      } else {
+        setMessage({
+          type: 'success',
+          text: entry ? 'Entry updated successfully.' : 'Entry created successfully.',
+        });
 
-      if (response.ok) {
-        setMessage({ type: 'success', text: entry ? 'Entry updated successfully' : 'Entry created successfully' });
-        
-        // Refresh the list after update
         if (onUpdate) {
           onUpdate();
         }
 
-        // Close the form after successful submission
         if (onCancel) {
           onCancel();
         }
-      } else {
-        setMessage({ type: 'error', text: result.message });
+
+        if (!entry) {
+          setFormData({
+            temperature: '',
+            coffeeWeight: '',
+            waterWeight: '',
+            grindSetting: '',
+            minutes: '',
+            seconds: '',
+            recipeId: '',
+          });
+        }
       }
     } catch (error) {
+      console.error('Unexpected error:', error);
       setMessage({ type: 'error', text: 'An unexpected error occurred. Please try again.' });
     } finally {
       setLoading(false);
@@ -127,6 +182,7 @@ export default function ManualEntryForm({ entry, onUpdate, onCancel }: ManualEnt
             className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
             placeholder="Enter temperature"
             required
+            min="0"
           />
         </div>
 
@@ -141,6 +197,7 @@ export default function ManualEntryForm({ entry, onUpdate, onCancel }: ManualEnt
             className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
             placeholder="Enter coffee weight"
             required
+            min="0"
           />
         </div>
 
@@ -155,6 +212,7 @@ export default function ManualEntryForm({ entry, onUpdate, onCancel }: ManualEnt
             className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
             placeholder="Enter water weight"
             required
+            min="0"
           />
         </div>
 
@@ -172,6 +230,25 @@ export default function ManualEntryForm({ entry, onUpdate, onCancel }: ManualEnt
           />
         </div>
 
+        {/* Recipe Selection */}
+        <div>
+          <label className="block text-sm font-medium">Select Recipe</label>
+          <select
+            name="recipeId" // Matches formData.recipeId
+            value={formData.recipeId}
+            onChange={handleChange}
+            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
+            required
+          >
+            <option value="">-- Select a Recipe --</option>
+            {recipes.map((recipe) => (
+              <option key={recipe.id} value={recipe.id}>
+                {recipe.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
         {/* Overall Time */}
         <div>
           <label className="block text-sm font-medium">Overall Time</label>
@@ -187,8 +264,8 @@ export default function ManualEntryForm({ entry, onUpdate, onCancel }: ManualEnt
                 required
               >
                 <option value="">MM</option>
-                {[...Array(11)].map((_, i) => (
-                  <option key={i} value={i}>
+                {[...Array(61)].map((_, i) => (
+                  <option key={i} value={i.toString()}>
                     {String(i).padStart(2, '0')}
                   </option>
                 ))}
@@ -206,7 +283,7 @@ export default function ManualEntryForm({ entry, onUpdate, onCancel }: ManualEnt
               >
                 <option value="">SS</option>
                 {[...Array(12)].map((_, i) => (
-                  <option key={i} value={i * 5}>
+                  <option key={i} value={(i * 5).toString()}>
                     {String(i * 5).padStart(2, '0')}
                   </option>
                 ))}
@@ -216,23 +293,27 @@ export default function ManualEntryForm({ entry, onUpdate, onCancel }: ManualEnt
         </div>
 
         {/* Submit and Cancel buttons */}
-        <button
-          type="submit"
-          className={`px-4 py-2 rounded-md text-white ${loading ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-500 hover:bg-blue-600'}`}
-          disabled={loading}
-        >
-          {loading ? 'Submitting...' : 'Submit'}
-        </button>
-
-        {onCancel && (
+        <div className="flex items-center space-x-4">
           <button
-            type="button"
-            onClick={onCancel}
-            className="ml-2 px-4 py-2 rounded-md text-white bg-red-500 hover:bg-red-600"
+            type="submit"
+            className={`px-4 py-2 rounded-md text-white ${
+              loading ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-500 hover:bg-blue-600'
+            }`}
+            disabled={loading}
           >
-            Cancel
+            {loading ? 'Submitting...' : 'Submit'}
           </button>
-        )}
+
+          {onCancel && (
+            <button
+              type="button"
+              onClick={onCancel}
+              className="px-4 py-2 rounded-md text-white bg-red-500 hover:bg-red-600"
+            >
+              Cancel
+            </button>
+          )}
+        </div>
       </form>
 
       {/* Feedback message */}

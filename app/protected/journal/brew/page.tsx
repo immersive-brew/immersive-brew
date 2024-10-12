@@ -1,4 +1,3 @@
-// pages/start-brew.tsx (or the appropriate path)
 import DeployButton from "@/components/DeployButton";
 import AuthButton from "@/components/AuthButton";
 import { createClient } from "@/utils/supabase/server";
@@ -49,32 +48,43 @@ export default async function StartBrewPage({ searchParams }: StartBrewPageProps
             method="GET" // You can change to "POST" if preferred
             className="flex flex-col gap-4 items-center"
           >
-            {/* Brew Method */}
-            <div className="flex flex-col">
-              <label htmlFor="brewMethod" className="font-semibold">
-                Brew Method
-              </label>
-              <select
-                id="brewMethod"
-                name="brewMethod" // Added name attribute
-                className="p-2 border rounded w-80"
-                required
-              >
-                <option value="" disabled>
-                  -- Choose a Brew Method --
-                </option>
-                <option value="v60">V60</option>
-                <option value="aeropress">AeroPress</option>
-                <option value="chemex">Chemex</option>
-                <option value="frenchPress">French Press</option>
-              </select>
-            </div>
-
             {/* Recipe Selector */}
             <RecipeSelector />
 
             {/* Ratio Calculator */}
             <RatioCalculator />
+
+            {/* Temperature Input */}
+            <div className="flex flex-col">
+              <label htmlFor="temperature" className="font-semibold">
+                Temperature (°C)
+              </label>
+              <input
+                type="number"
+                id="temperature"
+                name="temperature" // Added name attribute for temperature
+                className="p-2 border rounded w-80"
+                required
+                min={50} // Setting a reasonable minimum temperature
+                max={100} // Setting a reasonable maximum temperature
+              />
+            </div>
+
+            {/* Grind Setting Input */}
+            <div className="flex flex-col">
+              <label htmlFor="grindSetting" className="font-semibold">
+                Grind Setting (1-10)
+              </label>
+              <input
+                type="number"
+                id="grindSetting"
+                name="grindSetting" // Added name attribute for grind setting
+                className="p-2 border rounded w-80"
+                required
+                min={1} // Setting a minimum grind setting
+                max={10} // Setting a maximum grind setting
+              />
+            </div>
 
             {/* Start Button */}
             <button
