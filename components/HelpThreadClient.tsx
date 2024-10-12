@@ -1,17 +1,31 @@
-
-
 "use client"; // Mark this as a Client Component
 
 import React, { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
 
-// Initialize Supabase client
+// Define the Thread interface
+interface Thread {
+  id: number;
+  contents: string;
+  replys: string[];
+}
+
+// Initialize Supabase client with error handling for missing environment variables
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+if (!supabaseUrl || !supabaseAnonKey) {
+  throw new Error('Missing Supabase URL or Anon Key. Please ensure they are provided in your environment variables.');
+}
+
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-const HelpThreadClient = ({ initialThreads }) => {
-  const [threads, setThreads] = useState(initialThreads || []);
+interface HelpThreadClientProps {
+  initialThreads: Thread[];
+}
+
+const HelpThreadClient = ({ initialThreads }: HelpThreadClientProps) => {
+  const [threads, setThreads] = useState<Thread[]>(initialThreads || []);
   const [newThread, setNewThread] = useState('');
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
@@ -26,30 +40,31 @@ const HelpThreadClient = ({ initialThreads }) => {
     if (newThread.trim() !== '') {
       setLoading(true);
       const newThreadObj = { contents: newThread, replys: [] };
-
+  
       try {
         const { data, error } = await supabase
           .from('threads')
-          .insert([newThreadObj]);
-
+          .insert([newThreadObj])
+          .select(); // Ensure we return the inserted data
+  
         if (error) {
           console.error('Error inserting thread into Supabase:', error);
           setErrorMessage('Failed to create the thread. Please try again.');
-        } else {
-          setThreads([...threads, data[0]]);
+        } else if (data && data.length > 0) { // Check if data exists and has at least one entry
+          setThreads([...threads, data[0] as Thread]); // Explicitly cast data[0] as Thread
           setNewThread('');
           console.log('Created new thread:', data[0]);
         }
       } catch (error) {
         console.error('Unexpected error:', error);
-        setErrorMessage('Thankyou');
+        setErrorMessage('An unexpected error occurred. Please try again.');
       } finally {
         setLoading(false);
       }
     }
   };
+    
 
-  // Update the reply in Supabase and local state
   const addReply = async (threadId: number, replyText: string) => {
     const updatedThreads = threads.map(thread => {
       if (thread.id === threadId) {
@@ -77,17 +92,16 @@ const HelpThreadClient = ({ initialThreads }) => {
   };
 
   const deleteThread = async (threadId: number) => {
-    // Remove the thread from local state
     const { error } = await supabase
       .from('threads')
       .delete()
       .eq('id', threadId);
 
     if (error) {
-      console.error('Error deleting thread:', error); // Handle error
+      console.error('Error deleting thread:', error);
     } else {
       setThreads(threads.filter(thread => thread.id !== threadId));
-      console.log('Deleted thread with ID:', threadId); // Handle success
+      console.log('Deleted thread with ID:', threadId);
     }
   };
 
@@ -115,7 +129,7 @@ const HelpThreadClient = ({ initialThreads }) => {
 
       {errorMessage && <p className="text-red-500 mb-4">{errorMessage}</p>}
 
-      <div className="space-y-4"> {/* Map all threads found */}
+      <div className="space-y-4"> {/* Map all threads found */ }
         {threads.map((thread) => (
           <div key={thread.id} className="border-3 border-brown-700 bg-gray-50 p-4 rounded">
             <h2 className="text-xl font-semibold">{thread.contents}</h2>
@@ -127,7 +141,7 @@ const HelpThreadClient = ({ initialThreads }) => {
               Delete Thread
             </button>
 
-            <ReplySection threadId={thread.id} addReply={addReply} /> {/* Add the ReplySection component here */}
+            <ReplySection threadId={thread.id} addReply={addReply} />
 
             <div className="mt-4">
               <h3 className="font-semibold">Replies:</h3>
@@ -148,7 +162,7 @@ const HelpThreadClient = ({ initialThreads }) => {
   );
 };
 
-const ReplySection = ({ threadId, addReply }) => {
+const ReplySection = ({ threadId, addReply }: { threadId: number, addReply: (threadId: number, reply: string) => void }) => {
   const [reply, setReply] = useState('');
 
   const handleReply = (e: React.FormEvent) => {

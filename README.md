@@ -14,3 +14,7 @@ testing
 
 viwef89551@asaud.com
 ngoisno1
+
+in order to get google api to work run:
+
+npm install axios

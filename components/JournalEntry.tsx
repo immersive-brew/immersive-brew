@@ -2,23 +2,23 @@
 
 import React, { useEffect, useState } from 'react';
 import { createClient } from '@supabase/supabase-js';
-import ManualEntryForm from './ManualEntryForm'; // Import the form for editing
+import ManualEntryForm from '@/components/ManualEntryForm';
 
 type JournalEntryType = {
   id: number;
   created_at: string;
-  temperature?: number; // Assuming temperature is stored as a number
-  coffee_weight?: number; // Assuming weight is stored as a number
-  water_weight?: number; // Assuming weight is stored as a number
-  grind_setting?: string;
-  overall_time?: number; // Assuming time is stored as seconds (number)
+  temperature: number;
+  coffee_weight: number;
+  water_weight: number;
+  grind_setting: string;
+  overall_time: number;
 };
 
 export default function JournalEntry() {
   const [entries, setEntries] = useState<JournalEntryType[]>([]);
   const [loading, setLoading] = useState(true);
-  const [editingEntry, setEditingEntry] = useState<JournalEntryType | null>(null); // For editing entry
-  const [deleting, setDeleting] = useState<number | null>(null); // Track deleting entry
+  const [editingEntry, setEditingEntry] = useState<JournalEntryType | null>(null);
+  const [deleting, setDeleting] = useState<number | null>(null);
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
@@ -28,15 +28,13 @@ export default function JournalEntry() {
     setLoading(true);
     const { data, error } = await supabase
       .from('entries')
-      .select(
-        'id, created_at, temperature, coffee_weight, water_weight, grind_setting, overall_time'
-      )
+      .select('id, created_at, temperature, coffee_weight, water_weight, grind_setting, overall_time')
       .order('created_at', { ascending: false });
 
     if (error) {
       console.error('Error fetching journal entries:', error);
     } else {
-      setEntries(data || []);
+      setEntries((data as JournalEntryType[]) || []); // Ensure correct typing
     }
     setLoading(false);
   };
@@ -52,27 +50,27 @@ export default function JournalEntry() {
   };
 
   const handleEdit = (entry: JournalEntryType) => {
-    setEditingEntry(entry); // Set the entry for editing
+    setEditingEntry(entry);
   };
 
-  // Function to delete an entry
   const handleDelete = async (id: number) => {
-    setDeleting(id); // Set the entry to deleting state
+    setDeleting(id);
+    const updatedEntries = entries.filter((entry) => entry.id !== id);
+    setEntries(updatedEntries);
+
     try {
       const response = await fetch(`/api/entries/${id}`, {
         method: 'DELETE',
       });
 
-      if (response.ok) {
-        // Refresh entries after deletion
-        fetchEntries();
-      } else {
-        console.error('Failed to delete entry');
+      if (!response.ok) {
+        throw new Error('Failed to delete entry');
       }
     } catch (error) {
       console.error('Error deleting entry:', error);
+      fetchEntries(); // Re-fetch if there is an error
     } finally {
-      setDeleting(null); // Reset deleting state
+      setDeleting(null);
     }
   };
 
@@ -96,48 +94,37 @@ export default function JournalEntry() {
       ) : (
         <div className="space-y-4">
           {entries.map((entry) => (
-            <div
-              key={entry.id}
-              className="flex flex-col border border-gray-300 rounded-lg shadow-sm overflow-hidden"
-            >
-              {/* Top section with date */}
+            <div key={entry.id} className="flex flex-col border border-gray-300 rounded-lg shadow-sm overflow-hidden">
               <div className="p-4 bg-gray-100">
                 <div className="text-xl font-semibold">
                   Entry Date: {new Date(entry.created_at).toLocaleDateString()}
                 </div>
               </div>
 
-              {/* Bottom section with details in a grid */}
               <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4 bg-white">
-                <div className="text-coffee-dark">
+                <div>
                   <strong>Temperature:</strong> {entry.temperature !== undefined ? `${entry.temperature}°C` : 'N/A'}
                 </div>
-                <div className="text-coffee-dark">
+                <div>
                   <strong>Coffee Weight:</strong> {entry.coffee_weight !== undefined ? `${entry.coffee_weight}g` : 'N/A'}
                 </div>
-                <div className="text-coffee-dark">
+                <div>
                   <strong>Water Weight:</strong> {entry.water_weight !== undefined ? `${entry.water_weight}g` : 'N/A'}
                 </div>
-                <div className="text-coffee-dark">
+                <div>
                   <strong>Grind Setting:</strong> {entry.grind_setting || 'N/A'}
                 </div>
-                <div className="text-coffee-dark">
+                <div>
                   <strong>Overall Time:</strong> {entry.overall_time !== undefined ? formatTime(entry.overall_time) : 'N/A'}
                 </div>
                 <div className="flex justify-end space-x-2">
-                  {/* Edit Button */}
-                  <button
-                    className="text-blue-500 hover:underline"
-                    onClick={() => handleEdit(entry)}
-                  >
+                  <button className="text-blue-500 hover:underline" onClick={() => handleEdit(entry)}>
                     Edit
                   </button>
-
-                  {/* Delete Button */}
                   <button
                     className="text-red-500 hover:underline"
                     onClick={() => handleDelete(entry.id)}
-                    disabled={deleting === entry.id} // Disable while deleting
+                    disabled={deleting === entry.id}
                   >
                     {deleting === entry.id ? 'Deleting...' : 'Delete'}
                   </button>

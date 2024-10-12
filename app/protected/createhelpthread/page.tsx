@@ -1,7 +1,6 @@
 
 import { createClient } from '@/utils/supabase/server';
 import HelpThreadClient from '@/components/HelpThreadClient'; // Import the client-side component
-import HeaderBar from "@/components/HeaderBar";
 import AuthButton from "@/components/AuthButton";
 
 // Fetching data from Supabase happens server-side in this async function
@@ -21,8 +20,6 @@ export default async function HelpThreadPage() {
 
     return (
         <>
-            {/* HeaderBar and AuthButton components */}
-            <HeaderBar />
             <nav className="w-full flex justify-center border-b border-b-foreground/10 h-16">
                 <div className="w-full max-w-4xl flex justify-between items-center p-3 text-sm">
                     <AuthButton />

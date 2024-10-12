@@ -1,6 +1,6 @@
-"use client";
+'use client';
 import { useEffect, useState, useRef } from 'react';
-import { createClient } from '@supabase/supabase-js';
+import { createClient } from '@/utils/supabase/client';
 
 type JournalEntryType = {
   id: number;
@@ -17,28 +17,30 @@ interface GenerateImageProps {
 }
 
 export default function GenerateImage({ onImageGenerated }: GenerateImageProps) {
-  const [entry, setEntry] = useState<JournalEntryType | null>(null);
+  const [entries, setEntries] = useState<JournalEntryType[]>([]);
+  const [selectedEntryId, setSelectedEntryId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
+  // Initialize Supabase client
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
   const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-  // Fetch the first journal entry from the database
-  const fetchFirstEntry = async () => {
+  // Fetch all journal entries from the database
+  const fetchEntries = async () => {
     setLoading(true);
     const { data, error } = await supabase
       .from('entries')
       .select('id, created_at, temperature, coffee_weight, water_weight, grind_setting, overall_time')
-      .order('created_at', { ascending: true })
-      .limit(1);
+      .order('created_at', { ascending: false });
 
     if (error) {
-      console.error('Error fetching journal entry:', error);
+      console.error('Error fetching journal entries:', error);
     } else if (data && data.length > 0) {
-      console.log('Fetched entry:', data[0]);
-      setEntry(data[0]);
+      console.log('Fetched entries:', data);
+      setEntries(data);
+      setSelectedEntryId(data[0].id); // Select the latest entry by default
     } else {
       console.warn('No entries found in the database');
     }
@@ -46,7 +48,7 @@ export default function GenerateImage({ onImageGenerated }: GenerateImageProps) 
   };
 
   useEffect(() => {
-    fetchFirstEntry();
+    fetchEntries();
   }, []);
 
   const formatTime = (seconds: number) => {
@@ -69,46 +71,124 @@ export default function GenerateImage({ onImageGenerated }: GenerateImageProps) 
       return;
     }
 
-    console.log('Canvas and 2D context available.');
-
-    // Set canvas background color
-    ctx.fillStyle = 'lightblue';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    // Set text properties
-    ctx.font = '20px Arial';
-    ctx.fillStyle = 'black';
-    ctx.textAlign = 'left';
-
+    const entry = entries.find((e) => e.id === selectedEntryId);
     if (!entry) {
-      console.error('Entry data not available.');
+      console.error('Selected entry not found.');
       return;
     }
 
-    // Display the journal entry data on the image
-    ctx.fillText(`Entry Date: ${new Date(entry.created_at).toLocaleDateString()}`, 10, 30);
-    ctx.fillText(`Temperature: ${entry.temperature !== undefined ? `${entry.temperature}°C` : 'N/A'}`, 10, 60);
-    ctx.fillText(`Coffee Weight: ${entry.coffee_weight !== undefined ? `${entry.coffee_weight}g` : 'N/A'}`, 10, 90);
-    ctx.fillText(`Water Weight: ${entry.water_weight !== undefined ? `${entry.water_weight}g` : 'N/A'}`, 10, 120);
-    ctx.fillText(`Grind Setting: ${entry.grind_setting || 'N/A'}`, 10, 150);
-    ctx.fillText(`Overall Time: ${entry.overall_time !== undefined ? formatTime(entry.overall_time) : 'N/A'}`, 10, 180);
-    console.log('Journal entry data drawn on canvas.');
+    // Clear the canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Convert the canvas to an image and store the base64 string in imageSrc
-    const imageUrl = canvas.toDataURL('image/png').replace(/^data:image\/png;base64,/, ''); // Remove prefix for base64
-    onImageGenerated(imageUrl); // Pass the image base64 to the parent component
+    // Set canvas background with gradient
+    const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+    gradient.addColorStop(0, '#ffffff');
+    gradient.addColorStop(1, '#e0f7fa');
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Add Header
+    ctx.fillStyle = '#006064';
+    ctx.fillRect(0, 0, canvas.width, 60);
+
+    ctx.font = 'bold 24px Arial';
+    ctx.fillStyle = '#ffffff';
+    ctx.textAlign = 'center';
+    ctx.fillText('Coffee Journal Entry', canvas.width / 2, 35);
+
+    // Add Decorative Line
+    ctx.strokeStyle = '#004d40';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(20, 70);
+    ctx.lineTo(canvas.width - 20, 70);
+    ctx.stroke();
+
+    // Define Text Properties
+    ctx.font = '18px Arial';
+    ctx.fillStyle = '#004d40';
+    ctx.textAlign = 'left';
+
+    const padding = 20;
+    const lineHeight = 30;
+    let yPosition = 100;
+
+    // Display Journal Entry Data
+    ctx.fillText(`Entry Date: ${new Date(entry.created_at).toLocaleDateString()}`, padding, yPosition);
+    yPosition += lineHeight;
+    ctx.fillText(`Temperature: ${entry.temperature !== undefined ? `${entry.temperature}°C` : 'N/A'}`, padding, yPosition);
+    yPosition += lineHeight;
+    ctx.fillText(`Coffee Weight: ${entry.coffee_weight !== undefined ? `${entry.coffee_weight}g` : 'N/A'}`, padding, yPosition);
+    yPosition += lineHeight;
+    ctx.fillText(`Water Weight: ${entry.water_weight !== undefined ? `${entry.water_weight}g` : 'N/A'}`, padding, yPosition);
+    yPosition += lineHeight;
+    ctx.fillText(`Grind Setting: ${entry.grind_setting || 'N/A'}`, padding, yPosition);
+    yPosition += lineHeight;
+    ctx.fillText(`Overall Time: ${entry.overall_time !== undefined ? formatTime(entry.overall_time) : 'N/A'}`, padding, yPosition);
+
+    // Optionally, add an icon from the public folder
+    const icon = new Image();
+    icon.src = '/coffee-icon.png'; // Ensure this image exists in your public folder
+    icon.onload = () => {
+      const iconSize = 50;
+      ctx.drawImage(icon, canvas.width - iconSize - padding, padding, iconSize, iconSize);
+
+      // Generate image after all drawings are done
+      const imageUrl = canvas.toDataURL('image/png'); // Keep the full data URL
+      onImageGenerated(imageUrl); // Pass the image data URL to the parent component
+    };
+
+    // If the icon fails to load, still generate the image
+    icon.onerror = () => {
+      console.warn('Coffee icon not found. Generating image without icon.');
+      const imageUrl = canvas.toDataURL('image/png'); // Keep the full data URL
+      onImageGenerated(imageUrl); // Pass the image data URL to the parent component
+    };
   };
 
   if (loading) {
-    return <div>Loading...</div>;
+    return <div>Loading journal entries...</div>;
+  }
+
+  if (entries.length === 0) {
+    return <div>No journal entries available.</div>;
   }
 
   return (
     <div>
-      <canvas ref={canvasRef} width={400} height={250} style={{ border: '1px solid black', marginBottom: '20px' }} />
+      {/* Dropdown to Select Journal Entry */}
+      <div className="mb-4">
+        <label htmlFor="entry-select" className="block mb-2 font-semibold text-gray-700">
+          Select Journal Entry:
+        </label>
+        <select
+          id="entry-select"
+          value={selectedEntryId || ''}
+          onChange={(e) => setSelectedEntryId(Number(e.target.value))}
+          className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          {entries.map((entry) => (
+            <option key={entry.id} value={entry.id}>
+              {new Date(entry.created_at).toLocaleDateString()} - ID: {entry.id}
+            </option>
+          ))}
+        </select>
+      </div>
 
-      <button onClick={generateImageWithText} className="mb-4 px-4 py-2 bg-blue-500 text-white rounded">
-        Generate Image with Journal Entry Data
+      {/* Canvas to Generate Image */}
+      <canvas
+        ref={canvasRef}
+        width={600}
+        height={400}
+        style={{ border: '1px solid #ddd', borderRadius: '8px', marginBottom: '20px' }}
+      />
+
+      {/* Generate Image Button */}
+      <button
+        onClick={generateImageWithText}
+        className="mb-4 px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+      >
+        Generate Image with Selected Journal Entry
       </button>
     </div>
   );

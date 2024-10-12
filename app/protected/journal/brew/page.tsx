@@ -3,9 +3,13 @@ import AuthButton from "@/components/AuthButton";
 import { createClient } from "@/utils/supabase/server";
 import RatioCalculator from "@/components/RatioCalculator";
 import { redirect } from "next/navigation";
-import HeaderBar from "@/components/HeaderBar";
+import RecipeSelector from "@/components/RecipeSelector"; // Import the client component
 
-export default async function StartBrewPage({ searchParams }) {
+interface StartBrewPageProps {
+  searchParams: Record<string, string | string[]>;
+}
+
+export default async function StartBrewPage({ searchParams }: StartBrewPageProps) {
   const supabase = createClient();
 
   // Fetch authenticated user
@@ -18,21 +22,8 @@ export default async function StartBrewPage({ searchParams }) {
     return redirect("/login");
   }
 
-  // Parse water and coffee from the query params if they exist
-  const waterAmount = parseFloat(searchParams.waterAmount) || "";
-  const coffeeAmount = parseFloat(searchParams.coffeeAmount) || "";
-
-  // Calculate the water-to-coffee ratio (if both values are provided)
-  let ratio = "-";
-  if (waterAmount && coffeeAmount && coffeeAmount !== 0) {
-    ratio = (waterAmount / coffeeAmount).toFixed(2);
-  }
-
   return (
     <div className="flex-1 w-full flex flex-col gap-20 items-center">
-      {/* Add the HeaderBar component here */}
-      <HeaderBar />
-
       <div className="w-full">
         {/* Navigation bar (Deploy and Auth buttons) */}
         <nav className="w-full flex justify-center border-b border-b-foreground/10 h-16">
@@ -52,32 +43,57 @@ export default async function StartBrewPage({ searchParams }) {
 
         {/* Coffee Form for Manual Brewing */}
         <div className="mt-8">
-          <form action="/" method="GET" className="flex flex-col gap-4 items-center">
-            {/* Brew Method */}
-            <div className="flex flex-col">
-              <label htmlFor="brewMethod" className="font-semibold">Brew Method</label>
-              <select id="brewMethod" className="p-2 border rounded">
-                <option value="v60">V60</option>
-                <option value="aeropress">AeroPress</option>
-                <option value="chemex">Chemex</option>
-                <option value="frenchPress">French Press</option>
-              </select>
-            </div>
+          <form
+            action="/protected/journal/brew/start" // Updated action
+            method="GET" // You can change to "POST" if preferred
+            className="flex flex-col gap-4 items-center"
+          >
+            {/* Recipe Selector */}
+            <RecipeSelector />
 
+            {/* Ratio Calculator */}
             <RatioCalculator />
 
-          </form>
-          <div className="flex flex-col gap-4 items-center">
+            {/* Temperature Input */}
+            <div className="flex flex-col">
+              <label htmlFor="temperature" className="font-semibold">
+                Temperature (°C)
+              </label>
+              <input
+                type="number"
+                id="temperature"
+                name="temperature" // Added name attribute for temperature
+                className="p-2 border rounded w-80"
+                required
+                min={50} // Setting a reasonable minimum temperature
+                max={100} // Setting a reasonable maximum temperature
+              />
+            </div>
+
+            {/* Grind Setting Input */}
+            <div className="flex flex-col">
+              <label htmlFor="grindSetting" className="font-semibold">
+                Grind Setting (1-10)
+              </label>
+              <input
+                type="number"
+                id="grindSetting"
+                name="grindSetting" // Added name attribute for grind setting
+                className="p-2 border rounded w-80"
+                required
+                min={1} // Setting a minimum grind setting
+                max={10} // Setting a maximum grind setting
+              />
+            </div>
+
             {/* Start Button */}
-            <a href="/protected/journal/brew/start">
-              <button
-                type="submit"
-                className="mt-6 bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded "
-              >
-                Start Brewing
-              </button>
-            </a>
-          </div>
+            <button
+              type="submit" // Changed to submit button
+              className="mt-6 bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"
+            >
+              Start Brewing
+            </button>
+          </form>
         </div>
       </div>
 
