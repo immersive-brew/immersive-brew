@@ -3,6 +3,7 @@ import { useState } from "react";
 import CoffeeIntake from "./CoffeeIntake";
 import { createPortal } from "react-dom";
 
+//space
 export default function Notification() {
   // Set the initial state to false so the popup appears only when the button is pressed
   const [showPopup, setShowPopup] = useState(false);
