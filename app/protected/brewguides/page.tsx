@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import CardList from "@/components/CardList"; // Import the Client Component
 import HeaderBar from "@/components/HeaderBar"; // Import HeaderBar
-
+import Notification from "@/components/Notification";
 export default async function BrewGuides() {
   const supabase = createClient();
   const {
@@ -20,7 +20,7 @@ export default async function BrewGuides() {
     <div>
       {/* Add the HeaderBar at the top */}
       <HeaderBar />
-
+      
       <h1>Brew Guides</h1>
       <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Vero repellendus tempore...</p>
 
@@ -32,6 +32,9 @@ export default async function BrewGuides() {
 
       {/* Pass any necessary data to the Client Component */}
       <CardList />
+      <div className="flex flex-col items-center mt-6">
+          <Notification />
+      </div>
     </div>
   );
 }
