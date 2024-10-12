@@ -27,14 +27,12 @@ export default async function BrewGuides() {
       <div className="flex justify-center my-8">
         {/* Add any other content you need here */}
       </div>
-
+      <Notification />
       <h2>Community Brews</h2>
 
       {/* Pass any necessary data to the Client Component */}
       <CardList />
-      <div className="flex flex-col items-center mt-6">
-          <Notification />
-      </div>
+      
     </div>
   );
 }
