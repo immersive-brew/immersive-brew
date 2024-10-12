@@ -38,7 +38,7 @@ const RecipeRandomizer: React.FC<RecipeRandomizerProps> = ({ onSelect }) => {
       try {
         const { data, error } = await supabase
           .from("recipes")
-          .select("id, name, description, steps");
+          .select("id, name, description, steps, brew_method");
 
         if (error) {
           throw error;

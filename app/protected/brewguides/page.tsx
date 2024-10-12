@@ -2,7 +2,6 @@
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 import CardList from "@/components/CardList"; // Import the Client Component
-import RecipeRandomizer from "@/components/RecipeRandomizer";
 import BrewGuide from "@/components/BrewGuide"; // Import BrewGuide Component
 
 export default async function BrewGuides() {
@@ -51,10 +50,7 @@ export default async function BrewGuides() {
 
       {/* Pass any necessary data to the Client Component */}
       <CardList />
-      <h2>Recipe of the Day</h2>
-
-      {/* Pass any necessary data to the Client Component */}
-      <RecipeRandomizer />
+      
     </div>
   );
 }
