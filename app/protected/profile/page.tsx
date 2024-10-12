@@ -3,7 +3,8 @@ import HeaderBar from "@/components/HeaderBar";
 import ProfileForm from "@/components/ProfileForm";
 import DeleteAccountButton from "@/components/DeleteAccountButton";
 import ModeToggle from "@/components/DarkModeButton";
-
+import CoffeeIntake from "@/components/CoffeeIntake";
+import Notification from "@/components/Notification";
 
 export default async function Page() {
   const supabase = createClient();
@@ -48,6 +49,12 @@ export default async function Page() {
         {/* Delete Account Section */}
         <div className="flex flex-col items-center mt-6">
           <DeleteAccountButton />
+        </div>
+        <div className="flex flex-col items-center mt-6">
+          <CoffeeIntake />
+        </div>
+        <div className="flex flex-col items-center mt-6">
+          <Notification />
         </div>
       </div>
     </div>
