@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { createClient } from '@/utils/supabase/client'; // Importing the Supabase client
 
 type StepType = 'bloom' | 'pour' | 'wait';
+type BrewMethodType = 'V60' | 'Chemex' | 'AeroPress' | 'French Press'; // Brew method types
 
 interface Step {
   id: number;
@@ -24,6 +25,7 @@ const supabase = createClient(); // Initialize Supabase client
 export default function RecipeForm({ onSubmit, onCancel }: RecipeFormProps) {
   const [recipeName, setRecipeName] = useState('');
   const [recipeDescription, setRecipeDescription] = useState('');
+  const [brewMethod, setBrewMethod] = useState<BrewMethodType>('V60'); // State for brew method
   const [steps, setSteps] = useState<Step[]>([
     {
       id: Date.now(),
@@ -89,37 +91,11 @@ export default function RecipeForm({ onSubmit, onCancel }: RecipeFormProps) {
     ]);
   };
 
-  // Remove a step (optional)
+  // Remove step
   const removeStep = (index: number) => {
     const updatedSteps = [...steps];
     updatedSteps.splice(index, 1);
     setSteps(updatedSteps);
-  };
-
-  // Determine card border color based on step type
-  const getBorderColor = (stepType: StepType) => {
-    switch (stepType) {
-      case 'bloom':
-        return 'border-blue-300'; // Light Blue
-      case 'pour':
-        return 'border-blue-700'; // Dark Blue
-      case 'wait':
-      default:
-        return 'border-gray-300'; // Standard White
-    }
-  };
-
-  // Determine stripe color based on step type
-  const getStripeColor = (stepType: StepType) => {
-    switch (stepType) {
-      case 'bloom':
-        return 'bg-blue-300'; // Light Blue
-      case 'pour':
-        return 'bg-blue-700'; // Dark Blue
-      case 'wait':
-      default:
-        return 'bg-white'; // No stripe (white)
-    }
   };
 
   // Calculate total weight whenever steps change
@@ -153,9 +129,10 @@ export default function RecipeForm({ onSubmit, onCancel }: RecipeFormProps) {
     }
 
     // Validate steps
-    steps.forEach((step, index) => {
-      if (!step.description.trim() || step.duration === undefined) {
-        setMessage({ type: 'error', text: `Please fill out all required fields for Step ${index + 1}.` });
+    for (let i = 0; i < steps.length; i++) {
+      const step = steps[i];
+      if (!step.description.trim()) {
+        setMessage({ type: 'error', text: `Please enter a description for Step ${i + 1}.` });
         setLoading(false);
         return;
       }
@@ -163,15 +140,29 @@ export default function RecipeForm({ onSubmit, onCancel }: RecipeFormProps) {
         (step.step_type === 'bloom' || step.step_type === 'pour') &&
         (!step.numerator || !step.denominator)
       ) {
-        setMessage({ type: 'error', text: `Please select numerator and denominator for Step ${index + 1}.` });
+        setMessage({
+          type: 'error',
+          text: `Please select numerator and denominator for Step ${i + 1}.`,
+        });
         setLoading(false);
         return;
       }
-    });
+      if (step.duration < 0) {
+        setMessage({
+          type: 'error',
+          text: `Duration for Step ${i + 1} cannot be negative.`,
+        });
+        setLoading(false);
+        return;
+      }
+    }
 
-    // Check if total weight equals 1
-    if (Math.abs(totalWeight - 1) > 0.0001) { // Allowing a small epsilon for floating point precision
-      setMessage({ type: 'error', text: `Total weight must equal 1. Currently, it is ${totalWeight.toFixed(2)}.` });
+    // Check total weight equals 1
+    if (Math.abs(totalWeight - 1) > 0.0001) {
+      setMessage({
+        type: 'error',
+        text: `Total weight must equal 1. Currently, it is ${totalWeight.toFixed(2)}.`,
+      });
       setLoading(false);
       return;
     }
@@ -181,17 +172,18 @@ export default function RecipeForm({ onSubmit, onCancel }: RecipeFormProps) {
       step_type: step.step_type,
       description: step.description,
       weight: step.step_type !== 'wait' ? convertFractionToDecimal(step.numerator, step.denominator) : null,
-      duration: step.duration, // Duration in seconds
+      duration: step.duration,
     }));
 
     const data = {
       name: recipeName,
       description: recipeDescription,
+      brew_method: brewMethod, // Include selected brew method
       steps: preparedSteps,
     };
 
     try {
-      // Submit to Supabase
+      // Insert into Supabase
       const { data: recipe, error: recipeError } = await supabase
         .from('recipes')
         .insert([data])
@@ -206,9 +198,11 @@ export default function RecipeForm({ onSubmit, onCancel }: RecipeFormProps) {
       if (onSubmit) {
         onSubmit();
       }
+
       // Optionally reset the form
       setRecipeName('');
       setRecipeDescription('');
+      setBrewMethod('V60'); // Reset brew method to default
       setSteps([
         {
           id: Date.now(),
@@ -221,7 +215,10 @@ export default function RecipeForm({ onSubmit, onCancel }: RecipeFormProps) {
       ]);
     } catch (error: any) {
       console.error('Error:', error.message);
-      setMessage({ type: 'error', text: error.message || 'An unexpected error occurred. Please try again.' });
+      setMessage({
+        type: 'error',
+        text: error.message || 'An unexpected error occurred. Please try again.',
+      });
     } finally {
       setLoading(false);
     }
@@ -254,10 +251,31 @@ export default function RecipeForm({ onSubmit, onCancel }: RecipeFormProps) {
         />
       </div>
 
+      {/* Brew Method Dropdown */}
+      <div>
+        <label className="block text-sm font-medium mb-1">Brew Method</label>
+        <select
+          value={brewMethod}
+          onChange={(e) => setBrewMethod(e.target.value as BrewMethodType)}
+          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          required
+        >
+          <option value="V60">V60</option>
+          <option value="Chemex">Chemex</option>
+          <option value="AeroPress">AeroPress</option>
+          <option value="French Press">French Press</option>
+        </select>
+      </div>
+
       {/* Total Weight Indicator */}
       <div className="text-right">
-        <p className={`text-sm ${Math.abs(totalWeight - 1) > 0.0001 ? 'text-red-600' : 'text-green-600'}`}>
-          Total Weight: {totalWeight.toFixed(2)} {Math.abs(totalWeight - 1) > 0.0001 && '(Must equal 1)'}
+        <p
+          className={`text-sm ${
+            Math.abs(totalWeight - 1) > 0.0001 ? 'text-red-600' : 'text-green-600'
+          }`}
+        >
+          Total Weight: {totalWeight.toFixed(2)}{' '}
+          {Math.abs(totalWeight - 1) > 0.0001 && '(Must equal 1)'}
         </p>
       </div>
 
@@ -265,10 +283,24 @@ export default function RecipeForm({ onSubmit, onCancel }: RecipeFormProps) {
       {steps.map((step, index) => (
         <div
           key={step.id}
-          className={`relative border rounded-lg shadow-md p-6 bg-white ${getBorderColor(step.step_type)}`}
+          className={`relative border rounded-lg shadow-md p-6 bg-white ${
+            step.step_type === 'bloom'
+              ? 'border-blue-300'
+              : step.step_type === 'pour'
+              ? 'border-blue-700'
+              : 'border-gray-300'
+          }`}
         >
           {/* Stripe Indicator */}
-          <div className={`absolute top-0 left-0 h-full w-2 ${getStripeColor(step.step_type)} rounded-l-lg`}></div>
+          <div
+            className={`absolute top-0 left-0 h-full w-2 ${
+              step.step_type === 'bloom'
+                ? 'bg-blue-300'
+                : step.step_type === 'pour'
+                ? 'bg-blue-700'
+                : 'bg-gray-300'
+            } rounded-l-lg`}
+          ></div>
 
           <div className="ml-4">
             <div className="flex justify-between items-center mb-4">
@@ -292,7 +324,6 @@ export default function RecipeForm({ onSubmit, onCancel }: RecipeFormProps) {
                 value={step.step_type}
                 onChange={(e) => handleStepChange(index, e)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                disabled={index === 0} // First step is always 'bloom'
               >
                 <option value="bloom">Bloom</option>
                 <option value="pour">Pour</option>
@@ -418,7 +449,11 @@ export default function RecipeForm({ onSubmit, onCancel }: RecipeFormProps) {
 
       {/* Feedback Message */}
       {message && (
-        <p className={`mt-4 text-center text-sm ${message.type === 'success' ? 'text-green-600' : 'text-red-600'}`}>
+        <p
+          className={`mt-4 text-center text-sm ${
+            message.type === 'success' ? 'text-green-600' : 'text-red-600'
+          }`}
+        >
           {message.text}
         </p>
       )}

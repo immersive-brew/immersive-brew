@@ -22,6 +22,7 @@ interface Recipe {
   name: string;
   description: string;
   steps: RecipeStep[];
+  brew_method: string;
 }
 
 export default async function StartBrewProcessPage({
@@ -40,16 +41,19 @@ export default async function StartBrewProcessPage({
   }
 
   // Parse parameters from the query
+  
   const waterAmount = parseFloat(searchParams.waterAmount as string);
   const coffeeAmount = parseFloat(searchParams.coffeeAmount as string);
-  const brewMethod = (searchParams.brewMethod as string) || "";
+  const grindSetting = parseFloat(searchParams.grindSetting as string);
+  const temperature = parseFloat(searchParams.temperature as string);
   const recipeId = (searchParams.recipeId as string) || "";
+  console.log("params", {waterAmount , coffeeAmount, recipeId});
 
+  
   // Validate required parameters
   if (
     !waterAmount ||
     !coffeeAmount ||
-    !brewMethod ||
     !recipeId ||
     isNaN(waterAmount) ||
     isNaN(coffeeAmount)
@@ -95,7 +99,7 @@ export default async function StartBrewProcessPage({
   // Fetch recipe details based on recipeId
   const { data: recipe, error: recipeError } = await supabase
     .from("recipes") // Use only the table row type, no need for the second type argument
-    .select("id, name, description, steps")
+    .select("id, name, description, steps, brew_method")
     .eq("id", recipeId)
     .single();
 
@@ -195,14 +199,14 @@ export default async function StartBrewProcessPage({
         {/* Brew Details */}
         <h1 className="text-4xl font-bold text-center mt-10">Brewing: {recipe.name}</h1>
         <p className="text-center mt-4 text-lg">{recipe.description}</p>
-        <p className="text-center mt-2 text-lg">Brew Method: {brewMethod}</p>
+        <p className="text-center mt-2 text-lg">Brew Method: {recipe.brew_method}</p>
         <p className="text-center mt-2 text-lg">Water Amount: {waterAmount} ml</p>
         <p className="text-center mt-2 text-lg">Coffee Amount: {coffeeAmount} g</p>
         <p className="text-center mt-2 text-lg">Ratio: {ratio}</p>
 
         {/* Brew Timer */}
         <div className="mt-8">
-          <BrewTimer stages={recipe.steps} /> {/* Pass the dynamic stages from the recipe */}
+          <BrewTimer stages={recipe.steps} recipeId={recipe.id} temperature={temperature} grindSetting={grindSetting} waterAmount={waterAmount} coffeeAmount={coffeeAmount} /> {/* Pass the dynamic stages from the recipe */}
         </div>
       </div>
 
