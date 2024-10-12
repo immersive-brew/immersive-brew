@@ -50,6 +50,7 @@ export default async function BrewGuides() {
 
       {/* Pass any necessary data to the Client Component */}
       <CardList />
+      
     </div>
   );
 }
