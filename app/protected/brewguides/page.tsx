@@ -3,7 +3,7 @@ import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 import CardList from "@/components/CardList"; // Import the Client Component
 import BrewGuide from "@/components/BrewGuide"; // Import BrewGuide Component
-
+import Notification from "@/components/Notification";
 export default async function BrewGuides() {
   const supabase = createClient();
   const {
@@ -47,6 +47,8 @@ export default async function BrewGuides() {
 
       {/* Section for Community Brews */}
       <h2 className="text-xl font-bold mt-10">Community Brews</h2>
+      <Notification />
+      <h2>Community Brews</h2>
 
       {/* Pass any necessary data to the Client Component */}
       <CardList />
