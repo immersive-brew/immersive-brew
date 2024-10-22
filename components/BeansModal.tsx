@@ -1,130 +1,86 @@
-import { useState } from 'react'; // Importing useState hook from React for managing component state
+import React, { useState } from 'react';
+import { motion } from 'framer-motion';
 
-// Defining the BeansModal component, receiving onClose as a prop (defaulting to an empty function if none is provided)
-const BeansModal = ({ onClose = () => {} }) => {
-  
-  // Initializing state for coffeeName, roasterName, roastDate, roasterLevel, and beansRating
-  const [coffeeName, setCoffeeName] = useState(''); // coffeeName state initialized as an empty string
-  const [roasterName, setRoasterName] = useState(''); // roasterName state initialized as an empty string
-  const [roastDate, setRoastDate] = useState(''); // roastDate state initialized as an empty string
-  const [roasterLevel, setRoasterLevel] = useState(''); // roasterLevel state initialized as an empty string
-  const [beansRating, setBeansRating] = useState(0); // beansRating state initialized to 0
-  
-  // Function to handle rating changes when the user selects a star
-  const handleRatingChange = (rating) => {
-    setBeansRating(rating); // Updating beansRating state based on the selected rating
-  };
+interface BeansModalProps {
+  onClose: (data: { coffeeName: string; bagWeight: number } | null) => void;
+}
 
-  // Function to handle saving of beans data
+const BeansModal: React.FC<BeansModalProps> = ({ onClose }) => {
+  const [coffeeName, setCoffeeName] = useState<string>('');
+  const [bagWeight, setBagWeight] = useState<number>(0);
+
   const handleSave = () => {
-    // If any required fields are empty, alert the user and stop execution
-    if (!coffeeName || !roasterName || !roastDate || !roasterLevel) {
-      alert('Please fill out all fields'); // Alert if validation fails
-      return; // Stop execution if fields are not complete
+    if (coffeeName && bagWeight > 0) {
+      onClose({ coffeeName, bagWeight });
+    } else {
+      alert('Please fill in all fields');
     }
-
-    // Creating an object with the current state values to represent the bean details
-    const beansData = {
-      coffeeName, // coffeeName field
-      roasterName, // roasterName field
-      roastDate, // roastDate field
-      roasterLevel, // roasterLevel field
-      beansRating, // beansRating field
-    };
-
-    // Calling the onClose prop function, passing the beansData object to the parent component
-    onClose(beansData); // Pass the collected data back to parent when the modal is closed
   };
 
-  // JSX to render the modal content
   return (
-    // Container for the modal, covering the entire screen with a semi-transparent background
-    <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-70">
-      
-      {/* Modal content box with padding and rounded corners */}
-      <div className="bg-gray-800 p-6 rounded-lg relative">
+    <motion.div 
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+    >
+      <motion.div 
+        className="bg-[#E6D5B8] p-6 rounded-lg w-full max-w-md"
+        initial={{ scale: 0.9, y: 50 }}
+        animate={{ scale: 1, y: 0 }}
+        exit={{ scale: 0.9, y: 50 }}
+      >
+        <h2 className="text-2xl font-bold mb-4 text-[#4A2C2A]">Add Coffee Beans</h2>
         
-        {/* Button to close the modal without saving, triggering onClose with null */}
-        <button
-          onClick={() => onClose(null)} // Call onClose with null to discard the changes
-          className="absolute top-2 left-2 p-2 bg-[#D4A373] text-black rounded" // Styling for the back button
-        >
-          Back
-        </button>
-
-        {/* Title for the modal */}
-        <h2 className="text-xl font-bold mb-4">Add Coffee Beans</h2>
-
-        {/* Input field for the coffee name */}
         <div className="mb-4">
-          <label className="block text-sm font-bold">Coffee Name:</label> {/* Label for input */}
+          <label className="block text-[#4A2C2A] text-sm font-bold mb-2" htmlFor="coffeeName">
+            Coffee Name:
+          </label>
           <input
-            type="text" // Text input for coffee name
-            value={coffeeName} // Binding the value to coffeeName state
-            onChange={(e) => setCoffeeName(e.target.value)} // Update state when the user types
-            className="w-full p-2 bg-black border border-gray-600 rounded" // Styling for the input field
-            placeholder="Enter coffee name" // Placeholder text
+            id="coffeeName"
+            type="text"
+            value={coffeeName}
+            onChange={(e) => setCoffeeName(e.target.value)}
+            className="w-full p-2 bg-white border border-[#9C6644] rounded text-[#4A2C2A]"
+            placeholder="Enter coffee name"
           />
         </div>
 
-        {/* Input field for the roaster name */}
-        <div className="mb-4">
-          <label className="block text-sm font-bold">Roaster Name:</label> {/* Label for input */}
+        <div className="mb-6">
+          <label className="block text-[#4A2C2A] text-sm font-bold mb-2" htmlFor="bagWeight">
+            Bag Weight (g):
+          </label>
           <input
-            type="text" // Text input for roaster name
-            value={roasterName} // Binding the value to roasterName state
-            onChange={(e) => setRoasterName(e.target.value)} // Update state when the user types
-            className="w-full p-2 bg-black border border-gray-600 rounded" // Styling for the input field
-            placeholder="Enter roaster name" // Placeholder text
+            id="bagWeight"
+            type="number"
+            value={bagWeight || ''}
+            onChange={(e) => setBagWeight(Number(e.target.value))}
+            className="w-full p-2 bg-white border border-[#9C6644] rounded text-[#4A2C2A]"
+            placeholder="Enter bag weight"
           />
         </div>
 
-        {/* Input field for the roast date */}
-        <div className="mb-4">
-          <label className="block text-sm font-bold">Roast Date:</label> {/* Label for input */}
-          <input
-            type="date" // Date input for roast date
-            value={roastDate} // Binding the value to roastDate state
-            onChange={(e) => setRoastDate(e.target.value)} // Update state when the user changes the date
-            className="w-full p-2 bg-black border border-gray-600 rounded" // Styling for the input field
-          />
+        <div className="flex justify-end space-x-4">
+          <motion.button
+            onClick={() => onClose(null)}
+            className="px-4 py-2 bg-gray-300 text-[#4A2C2A] rounded hover:bg-gray-400 transition-colors"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            Cancel
+          </motion.button>
+          <motion.button
+            onClick={handleSave}
+            className="px-4 py-2 bg-[#9C6644] text-white rounded hover:bg-[#7F5539] transition-colors"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            Save
+          </motion.button>
         </div>
-
-        {/* Input field for the roaster level */}
-        <div className="mb-4">
-          <label className="block text-sm font-bold">Roaster Level:</label> {/* Label for input */}
-          <input
-            type="text" // Text input for roaster level
-            value={roasterLevel} // Binding the value to roasterLevel state
-            onChange={(e) => setRoasterLevel(e.target.value)} // Update state when the user types
-            className="w-full p-2 bg-black border border-gray-600 rounded" // Styling for the input field
-            placeholder="Enter roaster level" // Placeholder text
-          />
-        </div>
-
-        {/* Star rating system using 5 stars */}
-        <div className="flex mb-4">
-          {/* Iterating over an array of numbers (1 to 5) to render 5 star buttons */}
-          {[1, 2, 3, 4, 5].map((star) => (
-            <button key={star} onClick={() => handleRatingChange(star)}> {/* Set rating on click */}
-              {/* Displaying stars: yellow for selected stars, gray for unselected */}
-              <span className={beansRating >= star ? 'text-yellow-500' : 'text-gray-400'}>
-                ★
-              </span>
-            </button>
-          ))}
-        </div>
-
-        {/* Button to save the bean details, calls handleSave when clicked */}
-        <button
-          onClick={handleSave} // Call handleSave when clicked
-          className="w-full p-2 bg-[#D4A373] text-black rounded hover:bg-[#c78d5d] transition-all" // Styling for save button
-        >
-          Save Beans
-        </button>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 };
 
-export default BeansModal; // Exporting the BeansModal component as default
+export default BeansModal;
