@@ -14,6 +14,7 @@ interface TabProps {
   children: React.ReactNode;
   setPosition: (position: Position) => void;
   href: string;
+  subhref: string[];
 }
 
 const Navbar = () => {
@@ -38,8 +39,37 @@ const Navbar = () => {
   );
 };
 
-const Tab = ({ children, setPosition, href }: TabProps) => {
+const Tab = ({ children, setPosition, href, subhref }: TabProps) => {
   const ref = useRef<HTMLLIElement>(null);
+  const [subMenuOpen, setSubMenuOpen] = useState(false);
+
+  if(subhref) {
+    return (
+      <li
+        ref={ref}
+        onMouseEnter={() => {
+          if (!ref.current) return;
+
+          const { width } = ref.current.getBoundingClientRect();
+
+          setPosition({
+            left: ref.current.offsetLeft,
+            width,
+            opacity: 1,
+          });
+
+          setSubMenuOpen(true);
+        }}
+        onMouseLeave={() => {
+          setSubMenuOpen(false);
+        }}
+        className="relative z-10 block cursor-pointer px-3 py-1.5 text-xs uppercase text-white mix-blend-difference md:px-5 md:py-3 md:text-base"
+      >
+        <Link href={href}>{children}</Link>
+        
+      </li>
+    );
+  }
 
   return (
     <li
