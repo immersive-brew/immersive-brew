@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import BeansModal from './BeansModal';
 import { createClient } from '@/utils/supabase/client';
 
@@ -31,41 +31,30 @@ const EspressoJournalClient: React.FC<EspressoJournalClientProps> = ({ userId })
       timer = setInterval(() => {
         setElapsedTime((prev) => {
           if (prev < shotFinishedTime * 60) {
-            return prev + 1;
+            return prev + 0.1; // Update more frequently for smoother animation
           } else {
             setIsTimerRunning(false);
             return prev;
           }
         });
-      }, 1000);
+      }, 100); // Reduced interval for smoother updates
     }
     return () => clearInterval(timer);
   }, [isTimerRunning, shotFinishedTime]);
 
+  // Rest of the calculation functions remain the same
   const calculateShotFinishedTime = () => {
     if (yieldAmount > 0 && initialDose > 0) {
-      // Use a typical espresso brewing ratio (1:2 to 1:2.5)
       const ratio = yieldAmount / initialDose;
-      
-      // Base time for espresso shot (typically 25-30 seconds)
       const baseTime = 27;
-      
-      // Adjust time based on the ratio
       let adjustedTime = baseTime;
       if (ratio < 2) {
-        // Shorter time for ristretto-style shots
         adjustedTime = baseTime * (ratio / 2);
       } else if (ratio > 2.5) {
-        // Longer time for lungo-style shots
         adjustedTime = baseTime * (ratio / 2.5);
       }
-
-      // Add pre-infusion time
       adjustedTime += preInfusionTime;
-
-      // Convert to minutes
       const timeInMinutes = adjustedTime / 60;
-
       setShotFinishedTime(Number(timeInMinutes.toFixed(2)));
     } else {
       setShotFinishedTime(0);
@@ -91,19 +80,15 @@ const EspressoJournalClient: React.FC<EspressoJournalClientProps> = ({ userId })
         bag_weight: bagWeight,
       };
 
-      console.log('Attempting to save journal entry:', journalEntry);
-
       const { data, error } = await supabase
         .from('espresso')
         .insert(journalEntry);
 
       if (error) throw error;
 
-      console.log('Journal entry saved successfully', data);
       alert('Journal entry saved successfully!');
     } catch (error: any) {
-      console.error('Error saving journal entry', error);
-      console.error('Error details:', error.message, error.details, error.hint);
+      console.error('Error saving journal entry:', error);
       alert(`Failed to save journal entry. Error: ${error.message}`);
     }
   };
@@ -124,38 +109,73 @@ const EspressoJournalClient: React.FC<EspressoJournalClientProps> = ({ userId })
   const fillPercentage = elapsedTime / (shotFinishedTime * 60);
 
   return (
-    <div className="max-w-4xl mx-auto bg-[#E6D5B8] text-[#4A2C2A] rounded-lg shadow-lg p-6">
+    <motion.div 
+      className="max-w-4xl mx-auto bg-[#E6D5B8] text-[#4A2C2A] rounded-lg shadow-lg p-6"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.6, ease: "easeOut" }}
+    >
       <motion.div 
         className="flex justify-center items-center mb-8"
         initial={{ scale: 0.9 }}
         animate={{ scale: 1 }}
-        transition={{ duration: 0.3 }}
+        transition={{ duration: 0.5, ease: "easeOut" }}
       >
         <div className="relative w-64 h-64 flex items-center justify-center bg-[#D4A373] rounded-full border-4 border-[#9C6644]">
           <motion.div
-            className="absolute inset-0 bg-[#9C6644] bg-opacity-50 rounded-full"
-            style={{
-              clipPath: `circle(${fillPercentage * 50}% at 50% 50%)`,
+            className="absolute inset-0 bg-[#9C6644] bg-opacity-50 rounded-full origin-center"
+            animate={{
+              scale: [1, 1.02, 1],
+              clipPath: `circle(${fillPercentage * 50}% at 50% 50%)`
             }}
-            transition={{ duration: 0.5 }}
+            transition={{
+              clipPath: { duration: 0.8, ease: "easeInOut" },
+              scale: { duration: 2, repeat: Infinity, ease: "easeInOut" }
+            }}
           />
-          <div className="text-center z-10">
-            <p className="text-3xl font-bold">{coffeeBeans > 0 ? `${coffeeBeans}g` : 'Add Beans'}</p>
-            <p className="text-xl">{elapsedTime.toFixed(2)} sec</p>
+          <motion.div 
+            className="text-center z-10"
+            animate={{ scale: isTimerRunning ? [1, 1.02, 1] : 1 }}
+            transition={{ duration: 1, repeat: isTimerRunning ? Infinity : 0, ease: "easeInOut" }}
+          >
+            <AnimatePresence mode="wait">
+              <motion.p 
+                key={coffeeBeans}
+                className="text-3xl font-bold"
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 10 }}
+                transition={{ duration: 0.3 }}
+              >
+                {coffeeBeans > 0 ? `${coffeeBeans}g` : 'Add Beans'}
+              </motion.p>
+            </AnimatePresence>
+            <motion.p 
+              className="text-xl"
+              animate={{ opacity: isTimerRunning ? 1 : 0.7 }}
+            >
+              {elapsedTime.toFixed(1)} sec
+            </motion.p>
             <p className="text-xl font-bold">{shotFinishedTime.toFixed(2)} mins</p>
             <motion.button 
               onClick={handleStartTimer} 
               className="mt-2 bg-[#9C6644] text-white px-4 py-2 rounded-full hover:bg-[#7F5539] transition-colors"
-              whileHover={{ scale: 1.05 }}
+              whileHover={{ scale: 1.05, backgroundColor: "#7F5539" }}
               whileTap={{ scale: 0.95 }}
+              transition={{ duration: 0.2 }}
             >
               Start
             </motion.button>
-          </div>
+          </motion.div>
         </div>
       </motion.div>
 
-      <div className="grid grid-cols-2 gap-6">
+      <motion.div 
+        className="grid grid-cols-2 gap-6"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.6, delay: 0.3 }}
+      >
         <InputCard label="Coffee (g)" value={coffeeBeans} onChange={(e) => setCoffeeBeans(Number(e.target.value))} />
         <InputCard label="Yield (g)" value={yieldAmount} onChange={(e) => setYieldAmount(Number(e.target.value))} />
         <InputCard label="Grinder" value={grinderSetting} onChange={(e) => setGrinderSetting(Number(e.target.value))} />
@@ -177,8 +197,9 @@ const EspressoJournalClient: React.FC<EspressoJournalClientProps> = ({ userId })
         <motion.button
           onClick={() => setShowBeansModal(true)}
           className="col-span-2 w-full bg-[#9C6644] text-white p-4 rounded-lg hover:bg-[#7F5539] transition-colors"
-          whileHover={{ scale: 1.02 }}
+          whileHover={{ scale: 1.02, backgroundColor: "#7F5539" }}
           whileTap={{ scale: 0.98 }}
+          transition={{ duration: 0.2 }}
         >
           Add Beans
         </motion.button>
@@ -186,15 +207,18 @@ const EspressoJournalClient: React.FC<EspressoJournalClientProps> = ({ userId })
         <motion.button
           onClick={handleSave}
           className="col-span-2 w-full bg-[#9C6644] text-white p-4 rounded-lg hover:bg-[#7F5539] transition-colors"
-          whileHover={{ scale: 1.02 }}
+          whileHover={{ scale: 1.02, backgroundColor: "#7F5539" }}
           whileTap={{ scale: 0.98 }}
+          transition={{ duration: 0.2 }}
         >
           Save Journal Entry
         </motion.button>
-      </div>
+      </motion.div>
 
-      {showBeansModal && <BeansModal onClose={handleAddBeans} />}
-    </div>
+      <AnimatePresence>
+        {showBeansModal && <BeansModal onClose={handleAddBeans} />}
+      </AnimatePresence>
+    </motion.div>
   );
 };
 
@@ -206,7 +230,11 @@ interface InputCardProps {
 }
 
 const InputCard: React.FC<InputCardProps> = ({ label, value, onChange, className = "" }) => (
-  <div className={`bg-white p-4 rounded-lg shadow ${className}`}>
+  <motion.div 
+    className={`bg-white p-4 rounded-lg shadow ${className}`}
+    whileHover={{ scale: 1.02 }}
+    transition={{ duration: 0.2 }}
+  >
     <label className="block text-xl font-bold mb-2">{label}:</label>
     <input
       type="number"
@@ -214,7 +242,7 @@ const InputCard: React.FC<InputCardProps> = ({ label, value, onChange, className
       onChange={onChange}
       className="w-full p-2 bg-[#E6D5B8] border border-[#9C6644] rounded text-[#4A2C2A]"
     />
-  </div>
+  </motion.div>
 );
 
 export default EspressoJournalClient;
