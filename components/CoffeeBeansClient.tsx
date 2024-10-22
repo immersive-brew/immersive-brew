@@ -2,8 +2,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { createClient } from '@/utils/supabase/client';
 import CoffeeBeansModal from './CoffeeBeansModal';
+import { createClient } from '@/utils/supabase/client';
 
 interface CoffeeBean {
   id: string;
@@ -22,78 +22,115 @@ interface CoffeeBean {
   country: string;
   region: string;
   farm: string;
-  altitude: string;
+  altitude: number;
+  grinder_type: string;
+  grinder_setting: number;
   grind_size: string;
-  grinder_setting: string;
   beans_rating: number;
 }
 
 const CoffeeBeansClient = ({ userid }: { userid: string }) => {
   const [coffeeBeans, setCoffeeBeans] = useState<CoffeeBean[]>([]);
   const [showBeansModal, setShowBeansModal] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
   const supabase = createClient();
 
   useEffect(() => {
-    fetchCoffeeBeans();
-  }, []);
+    if (userid) {
+      fetchCoffeeBeans();
+    }
+  }, [userid]);
 
   async function fetchCoffeeBeans() {
-    const { data, error } = await supabase
-      .from('coffee_beans')
-      .select('*')
-      .eq('user_id', userid);
+    try {
+      const { data, error } = await supabase
+        .from('coffeebeans')
+        .select('*')
+        .eq('user_id', userid);
 
-    if (error) {
-      console.error('Error fetching coffee beans:', error);
-    } else {
+      if (error) {
+        throw error;
+      }
+
       setCoffeeBeans(data || []);
+    } catch (error) {
+      console.error('Error fetching coffee beans:', error);
+      setError('Failed to fetch coffee beans. Please try again.');
     }
   }
 
-  const handleAddBeans = async (beansData) => {
-    const { data, error } = await supabase
-      .from('coffee_beans')
-      .insert([
-        {
-          user_id: userid,
-          name: beansData.coffeeName,
-          roaster: beansData.roasterName,
-          roast_date: beansData.roastDate,
-          roast_level: beansData.roasterLevel,
-          weight: beansData.bagWeight,
-          varietal: beansData.varietal,
-          processing_method: beansData.processingMethod,
-          taste_notes: beansData.tasteNotes,
-          is_decaf: beansData.isDecaf,
-          is_sample_beans: beansData.isSampleBeans,
-          is_pre_ground: beansData.isPreGround,
-          country: beansData.country,
-          region: beansData.region,
-          farm: beansData.farm,
-          altitude: beansData.altitude,
-          grind_size: beansData.grindSize,
-          grinder_setting: beansData.grinderSetting,
-          beans_rating: beansData.beansRating,
-        },
-      ]);
+  const handleAddBeans = async (beansData: any) => {
+    try {
+      // Log the received data
+      console.log('Received beans data:', JSON.stringify(beansData, null, 2));
 
-    if (error) {
-      console.error('Error saving coffee beans:', error);
-    } else {
-      fetchCoffeeBeans();
+      const { data, error } = await supabase
+        .from('coffeebeans')
+        .insert([
+          {
+            user_id: userid,
+            name: beansData.coffeeName,
+            roaster: beansData.roasterName,
+            roast_date: beansData.roastDate,
+            roast_level: beansData.roastLevel,
+            weight: beansData.bagWeight,
+            varietal: beansData.varietal,
+            processing_method: beansData.processingMethod,
+            taste_notes: Array.isArray(beansData.tasteNotes) ? beansData.tasteNotes.join(', ') : beansData.tasteNotes,
+            is_decaf: beansData.isDecaf,
+            is_sample_beans: beansData.isSampleBeans,
+            is_pre_ground: beansData.isPreGround,
+            country: beansData.country,
+            region: beansData.region,
+            farm: beansData.farm,
+            altitude: beansData.altitude,
+            grind_size: beansData.grindSize,
+            grinder_type: beansData.grinderType,
+            grinder_setting: beansData.grinderSetting,
+            beans_rating: beansData.beansRating,
+          },
+        ]);
+
+      if (error) {
+        throw error;
+      }
+
+      await fetchCoffeeBeans(); // Refresh the list after adding
+      setError(null); // Clear any previous errors
+    } catch (error: any) {
+      console.error('Error saving coffee beans:', JSON.stringify(error, null, 2));
+      setError('Failed to save coffee beans. Please try again.');
     }
-    setShowBeansModal(false);
+  };
+
+  const handleModalClose = (beansData?: any) => {
+    if (beansData) {
+      handleAddBeans(beansData);
+    }
+    setShowBeansModal(false); // Close modal after saving or cancel
   };
 
   return (
-    <div className="p-6 max-w-3xl mx-auto bg-black text-white rounded-lg shadow-md">
-      <h1 className="text-center text-3xl font-bold mb-4">Coffee Beans</h1>
+    <div className="p-6 max-w-3xl mx-auto bg-[#E6D5B8] text-[#4A2C2A] rounded-lg shadow-md">
+      <h1 className="text-center text-3xl font-bold mb-4 flex items-center justify-center">
+        <span className="mr-2">☕</span>
+        Coffee Beans
+        <span className="ml-2">☕</span>
+      </h1>
+
+      {error && (
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
+          <strong className="font-bold">Error: </strong>
+          <span className="block sm:inline">{error}</span>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
         {coffeeBeans.map((bean) => (
           <motion.div
             key={bean.id}
-            className="bg-gray-800 p-4 rounded-lg"
+            className="bg-[#C7A17A] p-4 rounded-lg"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
           >
@@ -103,9 +140,17 @@ const CoffeeBeansClient = ({ userid }: { userid: string }) => {
             <p>Roast Level: {bean.roast_level}</p>
             <p>Weight: {bean.weight}g</p>
             <p>Rating: {bean.beans_rating}/5</p>
-            {bean.is_decaf && <p className="text-yellow-500">Decaf</p>}
-            {bean.is_sample_beans && <p className="text-blue-500">Sample Beans</p>}
-            {bean.is_pre_ground && <p className="text-green-500">Pre-Ground</p>}
+            {bean.is_decaf && <p className="text-[#B85C38]">Decaf</p>}
+            {bean.is_sample_beans && <p className="text-[#5C3D2E]">Sample Beans</p>}
+            {bean.is_pre_ground && <p className="text-[#2D4263]">Pre-Ground</p>}
+            {bean.country && <p>Origin: {bean.country}{bean.region ? `, ${bean.region}` : ''}</p>}
+            {bean.altitude > 0 && <p>Altitude: {bean.altitude}m</p>}
+            {bean.varietal && <p>Varietal: {bean.varietal}</p>}
+            {bean.processing_method && <p>Processing: {bean.processing_method}</p>}
+            {bean.taste_notes && <p>Taste Notes: {bean.taste_notes}</p>}
+            {bean.grinder_type && (
+              <p>Grinder: {bean.grinder_type}, Setting: {bean.grinder_setting}, Size: {bean.grind_size}</p>
+            )}
           </motion.div>
         ))}
       </div>
@@ -113,7 +158,7 @@ const CoffeeBeansClient = ({ userid }: { userid: string }) => {
       <div className="mb-4">
         <button
           onClick={() => setShowBeansModal(true)}
-          className="w-full bg-[#D4A373] text-black p-4 rounded-lg hover:bg-[#c78d5d] transition-all"
+          className="w-full bg-[#9C6644] text-white p-4 rounded-lg hover:bg-[#7F5539] transition-all"
         >
           Add Coffee Beans
         </button>
@@ -121,13 +166,7 @@ const CoffeeBeansClient = ({ userid }: { userid: string }) => {
 
       {showBeansModal && (
         <CoffeeBeansModal
-          onClose={(beansData) => {
-            if (beansData) {
-              handleAddBeans(beansData);
-            } else {
-              setShowBeansModal(false);
-            }
-          }}
+          onClose={handleModalClose}
         />
       )}
     </div>

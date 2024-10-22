@@ -20,7 +20,7 @@ export default async function CoffeeBeansPage() {
     <div className="w-full flex flex-col items-center">
       <HeaderBar />
       <AuthButton />
-      <CoffeeBeansClient userId={user.id} />
+      <CoffeeBeansClient userid={user.id} />
     </div>
   );
 }
