@@ -1,15 +1,13 @@
-// components/WaterQualityTracker.tsx
 'use client';
 import { useState, useEffect } from 'react';
 import { createClient } from '@/utils/supabase/client';
 
 export default function WaterQualityTracker() {
-  const [sampleImageLink, setSampleImageLink] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [sampleData, setSampleData] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
-  const [copySuccess, setCopySuccess] = useState<boolean>(false);
-  const [analysisResult, setAnalysisResult] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+  const [selectedWaterType, setSelectedWaterType] = useState<string | null>(null);
+  const [packetCount, setPacketCount] = useState<number | null>(null);
   const supabase = createClient();
 
   // Fetch the user ID when the component mounts
@@ -24,117 +22,91 @@ export default function WaterQualityTracker() {
     fetchUserId();
   }, [supabase]);
 
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = () => setSampleData(reader.result as string);
-      reader.readAsDataURL(file);
-    }
+  // Water types to track
+  const waterTypes = [
+    'Third Wave Water (light roast profile)',
+    'Coffee Water',
+    'gcwater',
+    'Aquacode',
+    'Perfect Coffee Water',
+    'Custom Water',
+  ];
+
+  // Handle water type selection
+  const handleWaterChoice = (waterType: string) => {
+    setSelectedWaterType(waterType);
+    setPacketCount(null); // Reset packet count when a new water type is selected
   };
 
-  // Convert base64 data URL to Blob
-  function dataURLtoBlob(dataurl: string) {
-    const arr = dataurl.split(',');
-    const mimeMatch = arr[0].match(/:(.*?);/);
-    if (!mimeMatch) throw new Error('Invalid data URL');
-    const mime = mimeMatch[1];
-    const bstr = atob(arr[1]);
-    const u8arr = new Uint8Array(bstr.length);
-    for (let i = 0; i < bstr.length; i++) u8arr[i] = bstr.charCodeAt(i);
-    return new Blob([u8arr], { type: mime });
-  }
-
-  const handleUpload = async () => {
-    if (!sampleData) {
-      console.error('No sample data to upload');
+  // Handle submission of water type and packet count to Supabase
+  const handleSubmit = async () => {
+    if (!userId) {
+      setMessage('Please log in to track water choices.');
       return;
     }
-    if (!userId) {
-      console.error('No user signed in');
+    if (!selectedWaterType || packetCount === null) {
+      setMessage('Please select a water type and packet count.');
       return;
     }
 
     setLoading(true);
-    setCopySuccess(false);
-
-    try {
-      const blob = dataURLtoBlob(sampleData);
-      const filename = `${userId}-sample-${Date.now()}.png`;
-
-      const { data, error } = await supabase.storage
-        .from('water-quality-samples')
-        .upload(filename, blob, {
-          cacheControl: '3600',
-          upsert: false,
-          contentType: 'image/png',
-        });
-
-      if (error) console.error('Error uploading sample:', error.message);
-      else {
-        const { data: publicData, error: publicUrlError } = supabase.storage
-          .from('water-quality-samples')
-          .getPublicUrl(filename);
-
-        if (publicUrlError) {
-          console.error('Error getting public URL:', publicUrlError.message);
-        } else {
-          setSampleImageLink(publicData.publicUrl);
-          console.log('Sample uploaded successfully:', publicData.publicUrl);
-
-          // Simulate water analysis
-          setAnalysisResult('Water sample contains trace levels of iron, calcium, and magnesium.');
-
-          try {
-            await navigator.clipboard.writeText(publicData.publicUrl);
-            setCopySuccess(true);
-            console.log('Sample link copied to clipboard.');
-          } catch (clipboardError) {
-            console.error('Failed to copy sample link:', clipboardError);
-          }
-        }
-      }
-    } catch (error) {
-      console.error('Error during upload:', error);
-    } finally {
-      setLoading(false);
+    const { data, error } = await supabase
+      .from('water_tracker')
+      .insert([{ user_id: userId, water_type: selectedWaterType, packet_count: packetCount, date: new Date() }]);
+    
+    if (error) {
+      console.error('Error uploading data:', error.message);
+      setMessage('Failed to upload data. Try again.');
+    } else {
+      setMessage(`Successfully tracked ${selectedWaterType} with ${packetCount} packets.`);
     }
+    setLoading(false);
+    setSelectedWaterType(null); // Reset after submission
+    setPacketCount(null); // Reset packet count after submission
   };
 
   return (
-    <div>
-      <input
-        type="file"
-        accept="image/*"
-        onChange={handleFileChange}
-        className="mb-4"
-      />
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '20px' }}>
+      <h2>Track Your Water Quality</h2>
+      {message && <p>{message}</p>}
 
-      <button
-        onClick={handleUpload}
-        className="mb-4 px-4 py-2 bg-blue-500 text-white rounded"
-        disabled={!sampleData || loading || !userId}
-      >
-        {loading ? 'Uploading...' : 'Upload Water Sample'}
-      </button>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+        {waterTypes.map((type) => (
+          <button
+            key={type}
+            onClick={() => handleWaterChoice(type)}
+            style={{ padding: '10px', fontSize: '16px' }}
+            disabled={loading}
+          >
+            {type}
+          </button>
+        ))}
+      </div>
 
-      {copySuccess && (
-        <div className="text-green-600 mb-4">
-          Sample link has been copied to your clipboard!
-        </div>
-      )}
-
-      {sampleImageLink && (
-        <div>
-          <p>Sample successfully uploaded!</p>
-          <a href={sampleImageLink} target="_blank" rel="noopener noreferrer">
-            View Sample
-          </a>
-          {analysisResult && (
-            <div className="mt-4">
-              <p><strong>Analysis Result:</strong> {analysisResult}</p>
-            </div>
-          )}
+      {selectedWaterType && (
+        <div style={{ marginTop: '20px' }}>
+          <label>
+            <h3>How many packets are you using?</h3>
+            <select
+              value={packetCount ?? ''}
+              onChange={(e) => setPacketCount(Number(e.target.value))}
+              style={{ padding: '10px', fontSize: '16px', marginTop: '10px' }}
+            >
+              <option value="" disabled>Select packet count</option>
+              {[1, 2, 3, 4, 5].map((count) => (
+                <option key={count} value={count}>
+                  {count}
+                </option>
+              ))}
+            </select>
+          </label>
+          <button
+            onClick={handleSubmit}
+            style={{ padding: '10px', fontSize: '16px', marginTop: '10px' }}
+            disabled={loading || packetCount === null}
+          >
+            {loading ? 'Loading...' : 'Submit'}
+          </button>
         </div>
       )}
     </div>
