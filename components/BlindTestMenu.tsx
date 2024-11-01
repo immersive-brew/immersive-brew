@@ -1,3 +1,4 @@
+"use client";
 import React from 'react';
 
 // Interface to define the structure of props that the BlindTastingMenu component expects
@@ -6,9 +7,7 @@ interface BlindTastingMenuProps {
 }
 
 // The functional component that displays the Blind Tasting Menu with 6 buttons
-export default function BlindTastingMenu({
-    onButtonClick,
-}: BlindTastingMenuProps) {
+export default function BlindTastingMenu() {
 
     // Button labels for the 6 tasting buttons
     const buttonLabels = ["Taste 1", "Taste 2", "Taste 3", "Taste 4", "Taste 5", "Taste 6"];
@@ -24,8 +23,7 @@ export default function BlindTastingMenu({
             <div className="grid grid-cols-3 gap-4">
                 {buttonLabels.map((label, index) => (
                     <button
-                        key={index}
-                        onClick={() => onButtonClick(label)} // Calls the function with the label as argument
+                        key={index}// Calls the function with the label as argument
                         className="bg-blue-500 text-white font-semibold py-2 px-4 rounded-md hover:bg-blue-600 transition"
                     >
                         {label}
