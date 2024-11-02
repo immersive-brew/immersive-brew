@@ -4,6 +4,9 @@ import { redirect } from "next/navigation";
 import CardList from "@/components/CardList"; // Import the Client Component
 import BrewGuide from "@/components/BrewGuide"; // Import BrewGuide Component
 import Notification from "@/components/Notification";
+import CoffeeHistory from "@/components/CoffeeHistory";
+import BlindTastingMenu from "@/components/BlindTestMenu";
+
 export default async function BrewGuides() {
   const supabase = createClient();
   const {
@@ -23,6 +26,46 @@ export default async function BrewGuides() {
     tldr: "A classic pour-over device that delivers clean, crisp coffee.",
     videoUrl: "https://www.youtube.com/embed/_44o-lCopNU?si=V_OcWJ0BXHmCbNIU", // Optional
   };
+  //coffeehistory data
+  const coffeeTypesData = [
+    {
+      name: "Americano",
+      description:
+        "An Americano is made by adding hot water to a shot of espresso, giving it a similar strength to drip coffee but with a different flavor profile. The result is a smooth, rich cup that’s less intense than a traditional espresso shot.",
+      imageUrl: "/pictures/Americano.png", // Update with the correct image path
+    },
+    {
+      name: "Mocha",
+      description:
+        "A Mocha is a chocolate-flavored variant of a latte. It’s typically made with one-third espresso, two-thirds steamed milk, and a portion of hot chocolate or cocoa. Mocha provides a sweet, indulgent option for coffee drinkers who enjoy the taste of chocolate.",
+      imageUrl: "/images/mocha.png",
+    },
+    {
+      name: "Espresso",
+      description:
+        "Espresso is a full-flavored, concentrated form of coffee served in small shots. It’s made by forcing pressurized hot water through finely-ground coffee beans, resulting in a bold, rich flavor that serves as the base for many other coffee drinks.",
+      imageUrl: "/images/espresso.png",
+    },
+    {
+      name: "Latte",
+      description:
+        "A Latte consists of one shot of espresso with steamed milk and a small amount of milk foam. The steamed milk creates a creamy texture, making the Latte one of the most popular coffee drinks globally.",
+      imageUrl: "/images/latte.png",
+    },
+    {
+      name: "Cappuccino",
+      description:
+        "A Cappuccino is similar to a Latte but with more foam and less steamed milk. It consists of equal parts of espresso, steamed milk, and milk foam, providing a balanced and strong coffee flavor with a creamy texture.",
+      imageUrl: "/images/cappuccino.png",
+    },
+    {
+      name: "Macchiato",
+      description:
+        "A Macchiato is an espresso coffee drink with a small amount of milk, usually foamed, added to it. The word 'macchiato' means 'stained' or 'spotted' in Italian, referring to the mark left by the milk in the espresso.",
+      imageUrl: "/images/macchiato.png",
+    },
+  ];
+  
 
   // Server-side content and logic
   return (
@@ -52,6 +95,12 @@ export default async function BrewGuides() {
 
       {/* Pass any necessary data to the Client Component */}
       <CardList />
+
+      {/* Coffee Drinks Section */}
+      <CoffeeHistory coffeeTypes={coffeeTypesData} />
+      {/*Blind Tasting Menu */}
+      
+      <BlindTastingMenu />
       
     </div>
   );

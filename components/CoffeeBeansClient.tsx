@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import CoffeeBeansModal from './CoffeeBeansModal';
 import { createClient } from '@/utils/supabase/client';
+import CoffeeBeanDelete from './CoffeeBeanDelete';
 
 interface CoffeeBean {
   id: string;
@@ -104,6 +105,10 @@ const CoffeeBeansClient = ({ userid }: { userid: string }) => {
     }
   };
 
+  const handleDeleteBean = (deletedBeanId: string) => {
+    setCoffeeBeans((prevBeans) => prevBeans.filter((bean) => bean.id !== deletedBeanId));
+  };
+
   const handleModalClose = (beansData?: any) => {
     if (beansData) {
       handleAddBeans(beansData);
@@ -130,10 +135,11 @@ const CoffeeBeansClient = ({ userid }: { userid: string }) => {
         {coffeeBeans.map((bean) => (
           <motion.div
             key={bean.id}
-            className="bg-[#C7A17A] p-4 rounded-lg"
+            className="relative bg-[#C7A17A] p-4 rounded-lg"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
           >
+            <CoffeeBeanDelete beanId={bean.id} onDelete={handleDeleteBean} />
             <h2 className="text-xl font-semibold">{bean.name}</h2>
             <p>Roaster: {bean.roaster}</p>
             <p>Roast Date: {new Date(bean.roast_date).toLocaleDateString()}</p>
