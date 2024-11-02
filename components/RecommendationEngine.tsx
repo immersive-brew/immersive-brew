@@ -24,6 +24,7 @@ const RecommendationEngine = () => {
     // Fetch recommendation from the API
     const fetchRecommendation = async () => {
         setLoading(true);
+        setRecommendations(null); // Reset previous recommendations
         try {
             const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/find_recommendations/`, {
                 method: "POST",
@@ -33,9 +34,16 @@ const RecommendationEngine = () => {
                 body: JSON.stringify(preferences),
             });
             const data = await response.json();
-            setRecommendations(data);
+
+            if (data.error) {
+                console.error("API error:", data.error);
+                setRecommendations({ error: data.error });
+            } else {
+                setRecommendations(data);
+            }
         } catch (error) {
-            console.error("Error fetching recommendations:", error);
+            console.error("Network or other error:", error);
+            setRecommendations({ error: "An unexpected error occurred. Please try again." });
         }
         setLoading(false);
     };
@@ -100,32 +108,45 @@ const RecommendationEngine = () => {
                     {loading ? "Loading..." : "Get Recommendation"}
                 </motion.button>
 
-                {/* Display recommendations if available */}
+                {/* Display recommendations or error message */}
                 {recommendations && (
-                    <motion.div
-                        className="mt-6 bg-gray-200 p-4 rounded-lg shadow-inner"
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.5 }}
-                    >
-                        <h2 className="text-lg font-bold mb-2">Best Overall Recommendation</h2>
-                        <p><strong>Owner:</strong> {recommendations.best_overall.owner}</p>
-                        <p><strong>Variety:</strong> {recommendations.best_overall.variety}</p>
-                        <p><strong>Processing:</strong> {recommendations.best_overall.processing}</p>
-                        <p><strong>Similarity Score:</strong> {recommendations.best_overall.similarity_score.toFixed(2)}</p>
-                        <p><strong>Quality:</strong> {recommendations.best_overall.quality}</p>
+                    recommendations.error ? (
+                        <div className="mt-4 p-4 bg-red-200 rounded-lg shadow">
+                            <p>{recommendations.error}</p>
+                        </div>
+                    ) : (
+                        <>
+                            <motion.div
+                                className="mt-6 bg-gray-200 p-4 rounded-lg shadow-inner"
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ duration: 0.5 }}
+                            >
+                                <h2 className="text-lg font-bold mb-2">Best Overall Recommendation</h2>
+                                <p><strong>Owner:</strong> {recommendations.best_overall.owner}</p>
+                                <p><strong>Variety:</strong> {recommendations.best_overall.variety}</p>
+                                <p><strong>Processing Method:</strong> {recommendations.best_overall.processing_method}</p>
+                                <p><strong>Quality:</strong> {recommendations.best_overall.quality}</p>
+                            </motion.div>
 
-                        <h2 className="text-lg font-bold mt-6 mb-2">Best Matches for Each Attribute</h2>
-                        {Object.entries(recommendations.best_matches_per_attribute).map(([attribute, match]) => (
-                            <div key={attribute} className="mb-4">
-                                <h3 className="text-md font-semibold capitalize">{attribute}</h3>
-                                <p><strong>Owner:</strong> {match.owner}</p>
-                                <p><strong>Variety:</strong> {match.variety}</p>
-                                <p><strong>Processing:</strong> {match.processing}</p>
-                                <p><strong>Similarity Score:</strong> {match.similarity_score.toFixed(2)}</p>
-                            </div>
-                        ))}
-                    </motion.div>
+                            <h2 className="text-lg font-bold mt-6 mb-2">Best Matches for Each Attribute</h2>
+                            {Object.entries(recommendations.best_matches_per_attribute).map(([attribute, match]) => (
+                                <motion.div
+                                    key={attribute}
+                                    className="mt-4 bg-gray-100 p-4 rounded-lg shadow"
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ duration: 0.4 }}
+                                >
+                                    <h3 className="text-md font-semibold capitalize">{attribute}</h3>
+                                    <p><strong>Owner:</strong> {match.owner}</p>
+                                    <p><strong>Variety:</strong> {match.variety}</p>
+                                    <p><strong>Processing Method:</strong> {match.processing_method}</p>
+                                    <p><strong>Similarity Score:</strong> {match.similarity_score.toFixed(2)}</p>
+                                </motion.div>
+                            ))}
+                        </>
+                    )
                 )}
 
                 {/* Test CORS Button */}
