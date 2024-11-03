@@ -1,12 +1,12 @@
 import { createClient } from "@/utils/supabase/server"; // Server-side client creation
-import HeaderBar from "@/components/HeaderBar";
 import ProfileForm from "@/components/ProfileForm";
 import DeleteAccountButton from "@/components/DeleteAccountButton";
 import ModeToggle from "@/components/DarkModeButton";
 import { redirect } from 'next/navigation';
-
 import CoffeeIntake from "@/components/CoffeeIntake";
 import Notification from "@/components/Notification";
+import BlindTastingMenu from "@/components/BlindTestMenu";
+
 
 export default async function Page() {
   const supabase = createClient();
@@ -57,6 +57,10 @@ export default async function Page() {
         <div className="flex flex-col items-center mt-6">
           <Notification />
         </div>
+        <div className="flex flex-col items-center mt-6">
+          <BlindTastingMenu />
+        </div>
+
       </div>
     </div>
   );

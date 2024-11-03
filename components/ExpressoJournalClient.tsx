@@ -1,252 +1,248 @@
-"use client"; // Indicates that this is a client-side component in Next.js
+"use client";
 
-import { useState, useEffect } from 'react'; // Import React hooks for state management and side effects
-import { motion } from 'framer-motion'; // Import motion component from framer-motion for animations
-import BeansModal from './BeansModal'; // Import custom BeansModal component
-import { createClient } from '@/utils/supabase/client'; // Import function to create Supabase client
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import BeansModal from './BeansModal';
+import { createClient } from '@/utils/supabase/client';
 
-// Define the main component, accepting a userid prop
-const ExpressoJournalClient = ({ userid }) => {
-  // State declarations using useState hook
-  const [preInfusionTime, setPreInfusionTime] = useState(0); // State for pre-infusion time
-  const [notes, setNotes] = useState(''); // State for user notes
-  const [coffeeBeans, setCoffeeBeans] = useState(0); // State for coffee beans weight
-  const [initialDose, setInitialDose] = useState(0); // State for initial coffee dose
-  const [yieldAmount, setYieldAmount] = useState(0); // State for espresso yield amount
-  const [grinderSetting, setGrinderSetting] = useState(5); // State for grinder setting, default 5
-  const [shots, setShots] = useState(1); // State for number of shots, default 1
-  const [bagWeight, setBagWeight] = useState(0); // State for bag weight
-  const [showBeansModal, setShowBeansModal] = useState(false); // State to control BeansModal visibility
-  const [isTimerRunning, setIsTimerRunning] = useState(false); // State to track if timer is running
-  const [elapsedTime, setElapsedTime] = useState(0); // State for elapsed time in seconds
-  const [shotFinishedTime, setShotFinishedTime] = useState(0); // State for shot finished time in minutes
+interface EspressoJournalClientProps {
+  userId: string;
+}
 
-  const supabase = createClient(); // Initialize Supabase client
+const EspressoJournalClient: React.FC<EspressoJournalClientProps> = ({ userId }) => {
+  const [preInfusionTime, setPreInfusionTime] = useState<number>(0);
+  const [notes, setNotes] = useState<string>('');
+  const [coffeeBeans, setCoffeeBeans] = useState<number>(0);
+  const [initialDose, setInitialDose] = useState<number>(0);
+  const [yieldAmount, setYieldAmount] = useState<number>(0);
+  const [grinderSetting, setGrinderSetting] = useState<number>(5);
+  const [shots, setShots] = useState<number>(1);
+  const [bagWeight, setBagWeight] = useState<number>(0);
+  const [showBeansModal, setShowBeansModal] = useState<boolean>(false);
+  const [isTimerRunning, setIsTimerRunning] = useState<boolean>(false);
+  const [elapsedTime, setElapsedTime] = useState<number>(0);
+  const [shotFinishedTime, setShotFinishedTime] = useState<number>(0);
 
-  // useEffect hook for timer functionality
+  const supabase = createClient();
+
   useEffect(() => {
-    let timer; // Variable to store the timer
-
-    // Start the timer when isTimerRunning is true
+    let timer: NodeJS.Timeout;
     if (isTimerRunning) {
       timer = setInterval(() => {
         setElapsedTime((prev) => {
-          if (prev < shotFinishedTime * 60) { // Check if elapsed time is less than shot finished time (in seconds)
-            return prev + 1; // Increment elapsed time
+          if (prev < shotFinishedTime * 60) {
+            return prev + 0.1; // Update more frequently for smoother animation
           } else {
-            setIsTimerRunning(false); // Stop the timer when it reaches the shot finished time
-            return prev; // Return current elapsed time without incrementing
+            setIsTimerRunning(false);
+            return prev;
           }
         });
-      }, 1000); // Update every second
+      }, 100); // Reduced interval for smoother updates
     }
-
-    // Cleanup function to clear the interval when component unmounts or dependencies change
     return () => clearInterval(timer);
-  }, [isTimerRunning, shotFinishedTime]); // Dependencies for the effect
+  }, [isTimerRunning, shotFinishedTime]);
 
-  // Function to calculate shot finished time based on yield amount and bag weight
+  // Rest of the calculation functions remain the same
   const calculateShotFinishedTime = () => {
-    if (yieldAmount > 0 && bagWeight > 0) {
-      const brewTime = (yieldAmount / bagWeight) * 30; // Calculate brew time based on yield and bag weight
-      setShotFinishedTime(brewTime); // Update shot finished time state
+    if (yieldAmount > 0 && initialDose > 0) {
+      const ratio = yieldAmount / initialDose;
+      const baseTime = 27;
+      let adjustedTime = baseTime;
+      if (ratio < 2) {
+        adjustedTime = baseTime * (ratio / 2);
+      } else if (ratio > 2.5) {
+        adjustedTime = baseTime * (ratio / 2.5);
+      }
+      adjustedTime += preInfusionTime;
+      const timeInMinutes = adjustedTime / 60;
+      setShotFinishedTime(Number(timeInMinutes.toFixed(2)));
     } else {
-      setShotFinishedTime(0); // Reset to 0 if values are invalid
+      setShotFinishedTime(0);
     }
   };
 
-  // useEffect hook to update shot finished time when yield or bag weight changes
   useEffect(() => {
     calculateShotFinishedTime();
-  }, [yieldAmount, bagWeight]);
+  }, [yieldAmount, initialDose, preInfusionTime]);
 
-  // Function to handle saving journal entry to Supabase
   const handleSave = async () => {
-    const { data, error } = await supabase
-      .from('espresso') // Specify the table name
-      .insert({ // Insert new record with the following data
-        userid,
-        preInfusionTime,
-        shotFinishedTime,
-        coffeeBeans,
-        initialDose,
-        yieldAmount,
-        grinderSetting,
-        shots,
-        notes,
-        bagWeight,
-      });
+    try {
+      const journalEntry = {
+        user_id: userId,
+        pre_infusion_time: preInfusionTime,
+        shot_finished_time: shotFinishedTime,
+        coffee_beans: coffeeBeans,
+        initial_dose: initialDose,
+        yield_amount: yieldAmount,
+        grinder_setting: grinderSetting,
+        shots: shots,
+        notes: notes,
+        bag_weight: bagWeight,
+      };
 
-    if (error) {
-      console.error('Error saving journal entry', error); // Log error if insertion fails
-    } else {
-      console.log('Journal entry saved successfully', data); // Log success message with returned data
+      const { data, error } = await supabase
+        .from('espresso')
+        .insert(journalEntry);
+
+      if (error) throw error;
+
+      alert('Journal entry saved successfully!');
+    } catch (error: any) {
+      console.error('Error saving journal entry:', error);
+      alert(`Failed to save journal entry. Error: ${error.message}`);
     }
   };
 
-  // Function to handle adding beans data from BeansModal
-  const handleAddBeans = (beansData) => {
-    setCoffeeBeans(beansData.coffeeName); // Set coffee name as beans display
-    setBagWeight(beansData.bagWeight); // Set bag weight from modal data
-    setShowBeansModal(false); // Close the modal
+  const handleAddBeans = (beansData: { coffeeName: string; bagWeight: number } | null) => {
+    if (beansData) {
+      setCoffeeBeans(Number(beansData.coffeeName));
+      setBagWeight(beansData.bagWeight);
+    }
+    setShowBeansModal(false);
   };
 
-  // Function to start the timer
   const handleStartTimer = () => {
-    setElapsedTime(0); // Reset elapsed time to 0
-    setIsTimerRunning(true); // Start the timer
+    setElapsedTime(0);
+    setIsTimerRunning(true);
   };
 
-  // Calculate fill percentage for the timer animation
   const fillPercentage = elapsedTime / (shotFinishedTime * 60);
 
-  // Component's JSX structure
   return (
-    <div className="p-6 max-w-3xl mx-auto bg-black text-white rounded-lg shadow-md">
-      <h1 className="text-center text-3xl font-bold mb-4">Espresso Journal</h1>
-
-      {/* Circular timer display */}
-      <div className="flex justify-center items-center mb-8">
-        <motion.div
-          className="relative w-56 h-56 flex items-center justify-center bg-gray-800 rounded-full border-4 border-[#D4A373]"
-          style={{
-            clipPath: 'circle(50%)',
-          }}
-        >
-          {/* Fill animation for timer */}
+    <motion.div 
+      className="max-w-4xl mx-auto bg-[#E6D5B8] text-[#4A2C2A] rounded-lg shadow-lg p-6"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.6, ease: "easeOut" }}
+    >
+      <motion.div 
+        className="flex justify-center items-center mb-8"
+        initial={{ scale: 0.9 }}
+        animate={{ scale: 1 }}
+        transition={{ duration: 0.5, ease: "easeOut" }}
+      >
+        <div className="relative w-64 h-64 flex items-center justify-center bg-[#D4A373] rounded-full border-4 border-[#9C6644]">
           <motion.div
-            className="absolute inset-0 bg-blue-500 bg-opacity-50"
-            style={{
-              clipPath: `inset(${100 - (fillPercentage * 100)}% 0% 0% 0%)`,
+            className="absolute inset-0 bg-[#9C6644] bg-opacity-50 rounded-full origin-center"
+            animate={{
+              scale: [1, 1.02, 1],
+              clipPath: `circle(${fillPercentage * 50}% at 50% 50%)`
             }}
-            transition={{ duration: 1 }}
+            transition={{
+              clipPath: { duration: 0.8, ease: "easeInOut" },
+              scale: { duration: 2, repeat: Infinity, ease: "easeInOut" }
+            }}
           />
-
-          <div className="text-center">
-            <p className="text-3xl">{coffeeBeans > 0 ? `${coffeeBeans}g` : 'Add Beans'}</p>
-            <p className="text-xl">{elapsedTime.toFixed(2)} sec</p>
-            <p className="text-xl font-bold">{shotFinishedTime} mins</p>
-            <button onClick={handleStartTimer} className="mt-2 bg-[#D4A373] text-black p-2 rounded-lg hover:bg-[#c78d5d]">
+          <motion.div 
+            className="text-center z-10"
+            animate={{ scale: isTimerRunning ? [1, 1.02, 1] : 1 }}
+            transition={{ duration: 1, repeat: isTimerRunning ? Infinity : 0, ease: "easeInOut" }}
+          >
+            <AnimatePresence mode="wait">
+              <motion.p 
+                key={coffeeBeans}
+                className="text-3xl font-bold"
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 10 }}
+                transition={{ duration: 0.3 }}
+              >
+                {coffeeBeans > 0 ? `${coffeeBeans}g` : 'Add Beans'}
+              </motion.p>
+            </AnimatePresence>
+            <motion.p 
+              className="text-xl"
+              animate={{ opacity: isTimerRunning ? 1 : 0.7 }}
+            >
+              {elapsedTime.toFixed(1)} sec
+            </motion.p>
+            <p className="text-xl font-bold">{shotFinishedTime.toFixed(2)} mins</p>
+            <motion.button 
+              onClick={handleStartTimer} 
+              className="mt-2 bg-[#9C6644] text-white px-4 py-2 rounded-full hover:bg-[#7F5539] transition-colors"
+              whileHover={{ scale: 1.05, backgroundColor: "#7F5539" }}
+              whileTap={{ scale: 0.95 }}
+              transition={{ duration: 0.2 }}
+            >
               Start
-            </button>
-          </div>
-        </motion.div>
-      </div>
-
-      {/* Grid layout for input fields */}
-      <div className="grid grid-cols-2 gap-6">
-        {/* Coffee weight input */}
-        <div className="bg-gray-800 p-4 rounded-lg">
-          <label className="block text-xl font-bold">Coffee (g):</label>
-          <input
-            type="number"
-            value={coffeeBeans}
-            onChange={(e) => setCoffeeBeans(Number(e.target.value))}
-            className="w-full p-2 bg-black border border-gray-600 rounded"
-          />
+            </motion.button>
+          </motion.div>
         </div>
+      </motion.div>
 
-        {/* Yield amount input */}
-        <div className="bg-gray-800 p-4 rounded-lg">
-          <label className="block text-xl font-bold">Yield (g):</label>
-          <input
-            type="number"
-            value={yieldAmount}
-            onChange={(e) => setYieldAmount(Number(e.target.value))}
-            className="w-full p-2 bg-black border border-gray-600 rounded"
-          />
-        </div>
-
-        {/* Grinder setting input */}
-        <div className="bg-gray-800 p-4 rounded-lg">
-          <label className="block text-xl font-bold">Grinder:</label>
-          <input
-            type="number"
-            value={grinderSetting}
-            onChange={(e) => setGrinderSetting(Number(e.target.value))}
-            className="w-full p-2 bg-black border border-gray-600 rounded"
-          />
-        </div>
-
-        {/* Pre-infusion time input */}
-        <div className="bg-gray-800 p-4 rounded-lg">
-          <label className="block text-xl font-bold">Pre-Infusion Time:</label>
-          <input
-            type="number"
-            value={preInfusionTime}
-            onChange={(e) => setPreInfusionTime(Number(e.target.value))}
-            className="w-full p-2 bg-black border border-gray-600 rounded"
-          />
-        </div>
-
-        {/* Number of shots input */}
-        <div className="bg-gray-800 p-4 rounded-lg">
-          <label className="block text-xl font-bold">Shots:</label>
-          <input
-            type="number"
-            value={shots}
-            onChange={(e) => setShots(Number(e.target.value))}
-            className="w-full p-2 bg-black border border-gray-600 rounded"
-          />
-        </div>
-
-        {/* Initial dose input */}
-        <div className="bg-gray-800 p-4 rounded-lg">
-          <label className="block text-xl font-bold">Initial Dose (g):</label>
-          <input
-            type="number"
-            value={initialDose}
-            onChange={(e) => setInitialDose(Number(e.target.value))}
-            className="w-full p-2 bg-black border border-gray-600 rounded"
-          />
-        </div>
-
-        {/* Bag weight input */}
-        <div className="bg-gray-800 p-4 rounded-lg col-span-2">
-          <label className="block text-xl font-bold">Bag Weight (g):</label>
-          <input
-            type="number"
-            value={bagWeight}
-            onChange={(e) => setBagWeight(Number(e.target.value))}
-            className="w-full p-2 bg-black border border-gray-600 rounded"
-          />
-        </div>
-
-        {/* Notes textarea */}
-        <div className="bg-gray-800 p-4 rounded-lg col-span-2">
-          <label className="block text-xl font-bold">Notes:</label>
+      <motion.div 
+        className="grid grid-cols-2 gap-6"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.6, delay: 0.3 }}
+      >
+        <InputCard label="Coffee (g)" value={coffeeBeans} onChange={(e) => setCoffeeBeans(Number(e.target.value))} />
+        <InputCard label="Yield (g)" value={yieldAmount} onChange={(e) => setYieldAmount(Number(e.target.value))} />
+        <InputCard label="Grinder" value={grinderSetting} onChange={(e) => setGrinderSetting(Number(e.target.value))} />
+        <InputCard label="Pre-Infusion Time (s)" value={preInfusionTime} onChange={(e) => setPreInfusionTime(Number(e.target.value))} />
+        <InputCard label="Shots" value={shots} onChange={(e) => setShots(Number(e.target.value))} />
+        <InputCard label="Initial Dose (g)" value={initialDose} onChange={(e) => setInitialDose(Number(e.target.value))} />
+        <InputCard label="Bag Weight (g)" value={bagWeight} onChange={(e) => setBagWeight(Number(e.target.value))} className="col-span-2" />
+        
+        <div className="col-span-2">
+          <label className="block text-xl font-bold mb-2">Notes:</label>
           <textarea
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            className="w-full p-2 bg-black border border-gray-600 rounded"
+            className="w-full p-2 bg-white border border-[#9C6644] rounded text-[#4A2C2A]"
+            rows={4}
           />
         </div>
 
-        {/* Button to open BeansModal */}
-        <div className="col-span-2">
-          <button
-            onClick={() => setShowBeansModal(true)}
-            className="w-full bg-[#D4A373] text-black p-4 rounded-lg hover:bg-[#c78d5d]"
-          >
-            Add Beans
-          </button>
-        </div>
+        <motion.button
+          onClick={() => setShowBeansModal(true)}
+          className="col-span-2 w-full bg-[#9C6644] text-white p-4 rounded-lg hover:bg-[#7F5539] transition-colors"
+          whileHover={{ scale: 1.02, backgroundColor: "#7F5539" }}
+          whileTap={{ scale: 0.98 }}
+          transition={{ duration: 0.2 }}
+        >
+          Add Beans
+        </motion.button>
 
-        {/* Save button */}
-        <div className="col-span-2">
-          <button
-            onClick={handleSave}
-            className="w-full bg-[#D4A373] text-black p-4 rounded-lg hover:bg-[#c78d5d]"
-          >
-            Save Journal Entry
-          </button>
-        </div>
-      </div>
+        <motion.button
+          onClick={handleSave}
+          className="col-span-2 w-full bg-[#9C6644] text-white p-4 rounded-lg hover:bg-[#7F5539] transition-colors"
+          whileHover={{ scale: 1.02, backgroundColor: "#7F5539" }}
+          whileTap={{ scale: 0.98 }}
+          transition={{ duration: 0.2 }}
+        >
+          Save Journal Entry
+        </motion.button>
+      </motion.div>
 
-      {/* Conditional rendering of BeansModal */}
-      {showBeansModal && <BeansModal onClose={handleAddBeans} />}
-    </div>
+      <AnimatePresence>
+        {showBeansModal && <BeansModal onClose={handleAddBeans} />}
+      </AnimatePresence>
+    </motion.div>
   );
 };
 
-export default ExpressoJournalClient; // Export the component for use in other parts of the application
+interface InputCardProps {
+  label: string;
+  value: number;
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  className?: string;
+}
+
+const InputCard: React.FC<InputCardProps> = ({ label, value, onChange, className = "" }) => (
+  <motion.div 
+    className={`bg-white p-4 rounded-lg shadow ${className}`}
+    whileHover={{ scale: 1.02 }}
+    transition={{ duration: 0.2 }}
+  >
+    <label className="block text-xl font-bold mb-2">{label}:</label>
+    <input
+      type="number"
+      value={isNaN(value) ? '' : value}
+      onChange={onChange}
+      className="w-full p-2 bg-[#E6D5B8] border border-[#9C6644] rounded text-[#4A2C2A]"
+    />
+  </motion.div>
+);
+
+export default EspressoJournalClient;
