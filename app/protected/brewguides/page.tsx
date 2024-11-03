@@ -63,9 +63,6 @@ export default async function BrewGuides() {
 
       {/* Coffee Drinks Section */}
       <CoffeeHistory coffeeTypes={coffeeTypesData} />
-
-      {/* Blind Tasting Menu */}
-      <BlindTastingMenuClient />
     </div>
   );
 }
