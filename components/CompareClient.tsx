@@ -110,7 +110,19 @@ export default function CompareClient() {
         description: "The total brewing time in mm:ss format.",
         isNumeric: true, // Stored in seconds
       },
-      // Removed "recipe_id" field
+      // Additional fields can be added here
+      {
+        key: "taste_notes",
+        label: "Taste Notes",
+        description: "User-described taste notes.",
+        isNumeric: false,
+      },
+      {
+        key: "rating",
+        label: "Rating",
+        description: "User rating out of 5.",
+        isNumeric: true,
+      },
     ],
     []
   );
@@ -194,6 +206,11 @@ export default function CompareClient() {
                 difference > 0 ? "+" : ""
               }${difference} seconds, influencing the extraction level.`;
               break;
+            case "rating":
+              explanation = `The rating differs by ${
+                difference > 0 ? "+" : ""
+              }${difference}, indicating a different user satisfaction level.`;
+              break;
             default:
               break;
           }
@@ -208,7 +225,9 @@ export default function CompareClient() {
             case "grind_setting":
               explanation = `Different grind settings (${value1} vs ${value2}) can lead to variations in extraction and flavor profiles.`;
               break;
-            // Removed "recipe_id" case
+            case "taste_notes":
+              explanation = `Taste notes are different, indicating a different flavor experience.`;
+              break;
             default:
               break;
           }
@@ -283,7 +302,10 @@ export default function CompareClient() {
                   }
                   style={{ width: "16px", height: "16px" }}
                 />
-                <label style={{ marginLeft: "8px", cursor: "pointer" }}>
+                <label
+                  style={{ marginLeft: "8px", cursor: "pointer" }}
+                  onClick={() => handleCheckboxChange(entry.id)}
+                >
                   {`Entry ${entry.id} - ${new Date(
                     entry.created_at
                   ).toLocaleDateString()}`}
@@ -307,7 +329,13 @@ export default function CompareClient() {
               }}
             >
               <h2 style={{ marginBottom: "20px" }}>Comparison</h2>
-              <table style={{ width: "100%", borderCollapse: "collapse" }}>
+              <table
+                style={{
+                  width: "100%",
+                  borderCollapse: "collapse",
+                  tableLayout: "fixed",
+                }}
+              >
                 <thead>
                   <tr>
                     <th
@@ -357,6 +385,17 @@ export default function CompareClient() {
                     const value1 = entryData[selectedEntries[0]][field.key];
                     const value2 = entryData[selectedEntries[1]][field.key];
 
+                    const isDifferent =
+                      field.isNumeric
+                        ? value1 !== value2
+                        : value1 !== value2;
+
+                    const cellStyle = {
+                      borderBottom: "1px solid #eee",
+                      padding: "10px",
+                      backgroundColor: isDifferent ? "#ffe5e5" : "#e5ffe5",
+                    };
+
                     return (
                       <tr key={field.key}>
                         <td
@@ -365,18 +404,14 @@ export default function CompareClient() {
                             padding: "10px",
                           }}
                         >
-                          <strong>{field.label}</strong>
-                          <br />
-                          <small style={{ color: "#666" }}>
-                            {field.description}
-                          </small>
+                          <strong
+                            title={field.description} // Tooltip using title attribute
+                            style={{ cursor: "help" }}
+                          >
+                            {field.label}
+                          </strong>
                         </td>
-                        <td
-                          style={{
-                            borderBottom: "1px solid #eee",
-                            padding: "10px",
-                          }}
-                        >
+                        <td style={cellStyle}>
                           {field.key === "overall_time"
                             ? formatTime(value1)
                             : value1 ?? "N/A"}
@@ -390,12 +425,7 @@ export default function CompareClient() {
                         >
                           {calculateDifference(field, value1, value2)}
                         </td>
-                        <td
-                          style={{
-                            borderBottom: "1px solid #eee",
-                            padding: "10px",
-                          }}
-                        >
+                        <td style={cellStyle}>
                           {field.key === "overall_time"
                             ? formatTime(value2)
                             : value2 ?? "N/A"}
@@ -425,17 +455,15 @@ export default function CompareClient() {
                               padding: "10px",
                             }}
                           >
-                            <strong>Recipe Name</strong>
-                            <br />
-                            <small style={{ color: "#666" }}>
-                              The name of the recipe.
-                            </small>
+                            <strong
+                              title="The name of the recipe."
+                              style={{ cursor: "help" }}
+                            >
+                              Recipe Name
+                            </strong>
                           </td>
                           <td
-                            style={{
-                              borderBottom: "1px solid #eee",
-                              padding: "10px",
-                            }}
+                            style={{ borderBottom: "1px solid #eee", padding: "10px" }}
                           >
                             {entryData[selectedEntries[0]].recipe.name || "N/A"}
                           </td>
@@ -454,10 +482,7 @@ export default function CompareClient() {
                             )}
                           </td>
                           <td
-                            style={{
-                              borderBottom: "1px solid #eee",
-                              padding: "10px",
-                            }}
+                            style={{ borderBottom: "1px solid #eee", padding: "10px" }}
                           >
                             {entryData[selectedEntries[1]].recipe.name || "N/A"}
                           </td>
