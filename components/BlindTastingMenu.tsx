@@ -14,7 +14,7 @@ export default function BlindTastingMenu({ onButtonClick }: BlindTastingMenuProp
         { label: "Espresso", icon: <FaSeedling /> },
         { label: "Latte", icon: <FaWater /> },
         { label: "Cappuccino", icon: <FaSteam /> },
-        { label: "Macchiato", icon: <FaGlassWhiskey /> },  // Substitute for FaMugMarshmallow
+        { label: "Macchiato", icon: <FaGlassWhiskey /> },
     ];
 
     return (
