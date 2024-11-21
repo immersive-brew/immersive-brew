@@ -1,4 +1,5 @@
-'use client';
+'use client'; 
+// new NavBar Publish
 
 import { motion } from 'framer-motion';
 import React, { useState, useRef } from 'react';
