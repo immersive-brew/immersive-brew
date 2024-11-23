@@ -19,7 +19,7 @@ export function SaveButton({ id, fullName, ...props }: Props) {
 
       const { data, error } = await supabase
         .from("profiles")
-        .update({ full_name: fullName, updated_at: new Date() })
+        .update({ full_name: fullName, updated_at: new Date(),  })
         .eq("id", id);
 
       if (error) {
