@@ -1,9 +1,9 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { createClient } from '@/utils/supabase/client';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import Image from 'next/image';
-import Modal from 'react-modal'; // Make sure to install react-modal
+import Modal from 'react-modal'; // Ensure react-modal is installed
 
 export default function WaterQualityTracker() {
   const [userId, setUserId] = useState<string | null>(null);
@@ -33,7 +33,7 @@ export default function WaterQualityTracker() {
     fetchUserId();
   }, [supabase]);
 
-  // Water types with images
+  // Water types with images (assuming images are in /public/images/)
   const waterTypes = [
     {
       name: 'Third Wave Water (light roast profile)',
