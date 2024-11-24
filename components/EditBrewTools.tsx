@@ -1,7 +1,10 @@
-'use client'
-import React, { useState } from 'react';
-import { createClient } from "@/utils/supabase/client";
+"use client";
+
+import React, { useState, useEffect } from 'react';
+import { createClient } from '@/utils/supabase/client';
+
 const EditBrewTools = () => {
+  const [userId, setUserId] = useState<string | null>(null); // To store the user's ID
   const [selectedTool, setSelectedTool] = useState({
     device: '',
     grinder: '',
@@ -12,13 +15,13 @@ const EditBrewTools = () => {
   const deviceOptions = [
     'AeroPress',
     'v60',
-    'chemex'
+    'chemex',
   ];
 
   const grinderOptions = [
     'Manual Grinder',
     'Electric Grinder',
-    'No Grinder',
+    'No Grinder'
   ];
 
   const espressoOptions = [
@@ -27,13 +30,41 @@ const EditBrewTools = () => {
     'No Espresso'
   ];
 
+  const supabase = createClient();
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+
+      if (session?.user) {
+        setUserId(session.user.id); // Set the user ID from the session
+      } else {
+        console.error("User not logged in");
+      }
+    };
+
+    fetchUser();
+  }, []);
+
   const handleSave = async () => {
+    if (!userId) {
+      alert('User not logged in');
+      return;
+    }
+
     setIsSaving(true);
+
     try {
-      const supabase = createClient();
       const { data, error } = await supabase
         .from('profiles')
-        .update({ brewtools: selectedTool })
+        .update({
+          brewing_tools: {
+            device: selectedTool.device,
+            grinder: selectedTool.grinder,
+            espresso: selectedTool.espresso, // Corrected spelling here
+          },
+        })
+        .eq('id', userId);
 
       if (error) {
         throw error;
@@ -46,6 +77,15 @@ const EditBrewTools = () => {
     } finally {
       setIsSaving(false);
     }
+  };
+
+  const handleReset = () => {
+    setSelectedTool({
+      device: '',
+      grinder: '',
+      espresso: ''
+    });
+    window.location.reload(); // Refresh the page to reset all values
   };
 
   return (
@@ -105,6 +145,7 @@ const EditBrewTools = () => {
       <button onClick={handleSave} disabled={isSaving || !selectedTool.device || !selectedTool.grinder || !selectedTool.espresso}>
         {isSaving ? 'Saving...' : 'Save'}
       </button>
+      
     </div>
   );
 };
