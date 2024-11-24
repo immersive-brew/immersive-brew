@@ -22,6 +22,29 @@ export default async function StartBrewPage({ searchParams }: StartBrewPageProps
     return redirect("/login");
   }
 
+  // Fetch latest feedback from 'profiles' table
+  const { data: profile, error: profileError } = await supabase
+    .from("profiles")
+    .select("latest_feedback")
+    .eq("id", user.id)
+    .single();
+
+  if (profileError) {
+    console.error("Error fetching profile:", profileError);
+  }
+
+  // Fetch latest brew entry from 'entries' table
+  const { data: latestBrew, error: entriesError } = await supabase
+    .from("entries")
+    .select("temperature, coffee_weight, water_weight, grind_setting, overall_time")
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .single();
+
+  if (entriesError) {
+    console.error("Error fetching latest brew:", entriesError);
+  }
+
   return (
     <div className="flex-1 w-full flex flex-col gap-20 items-center">
       <div className="w-full">
@@ -40,6 +63,48 @@ export default async function StartBrewPage({ searchParams }: StartBrewPageProps
         <p className="text-center mt-4 text-lg">
           Customize your manual coffee brew and start brewing.
         </p>
+
+        {/* Display Latest Feedback */}
+        {profile?.latest_feedback ? (
+          <div className="mt-8 bg-gray-100 p-4 rounded">
+            <h2 className="text-2xl font-bold">Latest Feedback</h2>
+            <p className="mt-2">
+              <strong>Taste:</strong> {profile.latest_feedback.feedback_user}
+            </p>
+            <p>
+              <strong>Advice:</strong> {profile.latest_feedback.feedback_suggestion}
+            </p>
+            <p>
+              <strong>Expected Output:</strong> {profile.latest_feedback.feedback_expected_output}
+            </p>
+          </div>
+        ) : (
+          <p className="mt-8 text-gray-500">No feedback available yet.</p>
+        )}
+
+        {/* Display Latest Brew */}
+        {latestBrew ? (
+          <div className="mt-8 bg-gray-100 p-4 rounded">
+            <h2 className="text-2xl font-bold">Latest Brew</h2>
+            <p className="mt-2">
+              <strong>Temperature:</strong> {latestBrew.temperature}°C
+            </p>
+            <p>
+              <strong>Coffee Weight:</strong> {latestBrew.coffee_weight}g
+            </p>
+            <p>
+              <strong>Water Weight:</strong> {latestBrew.water_weight}g
+            </p>
+            <p>
+              <strong>Grind Setting:</strong> {latestBrew.grind_setting}
+            </p>
+            <p>
+              <strong>Overall Time:</strong> {latestBrew.overall_time}s
+            </p>
+          </div>
+        ) : (
+          <p className="mt-8 text-gray-500">No brews available yet.</p>
+        )}
 
         {/* Coffee Form for Manual Brewing */}
         <div className="mt-8">
