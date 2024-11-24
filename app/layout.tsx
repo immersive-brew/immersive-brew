@@ -2,7 +2,9 @@ import { Poppins } from 'next/font/google';
 import './globals.css';
 import { ThemeProvider } from "@/components/ThemeProvider";
 import Navbar from '@/components/NavBar';
+import ChatBot from '@/components/ChatBot';
 import { headers } from 'next/headers'; // Import headers to get the current URL path
+
 
 const poppins = Poppins({
     subsets: ['latin'],
@@ -58,6 +60,7 @@ export default function RootLayout({
                     {!shouldHideNavbar && <Navbar />}
                     <main>
                         {children}
+                        <ChatBot />
                     </main>
                 </ThemeProvider>
             </body>
