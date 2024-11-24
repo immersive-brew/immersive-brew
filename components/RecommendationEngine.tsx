@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 
 const RecommendationEngine = () => {
     const [preferences, setPreferences] = useState({
@@ -68,18 +68,91 @@ const RecommendationEngine = () => {
         setLoading(false);
     };
 
+    // Function to generate Google search URL
+    const generateGoogleSearchUrl = (owner, variety, processingMethod) => {
+        const query = `${owner} ${variety} ${processingMethod}`;
+        const encodedQuery = encodeURIComponent(query);
+        return `https://www.google.com/search?q=${encodedQuery}`;
+    };
+
+    // Animation Variants
+    const containerVariants = {
+        hidden: { opacity: 0, y: 50 },
+        visible: {
+            opacity: 1,
+            y: 0,
+            transition: {
+                duration: 0.6,
+                when: "beforeChildren",
+                staggerChildren: 0.2,
+            },
+        },
+    };
+
+    const cardVariants = {
+        hidden: { opacity: 0, y: 20 },
+        visible: { opacity: 1, y: 0 },
+    };
+
+    const buttonVariants = {
+        initial: { scale: 1 },
+        hover: { scale: 1.05, backgroundColor: "#2563EB", transition: { duration: 0.3 } }, // Blue-600
+        tap: { scale: 0.95 },
+    };
+
+    const secondaryButtonVariants = {
+        initial: { scale: 1 },
+        hover: { scale: 1.05, backgroundColor: "#10B981", transition: { duration: 0.3 } }, // Green-500
+        tap: { scale: 0.95 },
+    };
+
+    const linkVariants = {
+        hidden: { opacity: 0, y: 10 },
+        visible: { opacity: 1, y: 0, transition: { duration: 0.3, delay: 0.2 } },
+    };
+
+    // Spinner Component
+    const Spinner = () => (
+        <svg
+            className="animate-spin h-5 w-5 text-white inline-block ml-2"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+        >
+            <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+            ></circle>
+            <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8v8H4z"
+            ></path>
+        </svg>
+    );
+
     return (
-        <div className="flex flex-col items-center justify-center h-screen bg-gray-100 p-6">
+        <motion.div
+            className="flex flex-col items-center justify-center min-h-screen bg-gray-100 p-6"
+            initial="hidden"
+            animate="visible"
+            variants={containerVariants}
+        >
             <motion.h1
                 className="text-4xl font-bold mb-8"
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6 }}
+                variants={cardVariants}
             >
                 Recommendation Engine
             </motion.h1>
 
-            <div className="w-full max-w-md bg-white p-6 rounded-lg shadow-lg">
+            <motion.div
+                className="w-full max-w-md bg-white p-6 rounded-lg shadow-lg"
+                variants={cardVariants}
+            >
                 {["aroma", "flavor", "acidity", "body", "sweetness"].map((attribute) => (
                     <div key={attribute} className="mb-4">
                         <label className="block text-sm font-medium text-gray-700 mb-2 capitalize">
@@ -101,73 +174,145 @@ const RecommendationEngine = () => {
 
                 <motion.button
                     onClick={fetchRecommendation}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    className="w-full bg-blue-500 text-white py-2 rounded-lg mt-4 font-semibold"
+                    variants={buttonVariants}
+                    initial="initial"
+                    whileHover="hover"
+                    whileTap="tap"
+                    className="w-full bg-blue-500 text-white py-2 rounded-lg mt-4 font-semibold shadow-md focus:outline-none flex items-center justify-center"
                 >
-                    {loading ? "Loading..." : "Get Recommendation"}
+                    {loading ? (
+                        <>
+                            Loading...
+                            <Spinner />
+                        </>
+                    ) : (
+                        "Get Recommendation"
+                    )}
                 </motion.button>
 
                 {/* Display recommendations or error message */}
-                {recommendations && (
-                    recommendations.error ? (
-                        <div className="mt-4 p-4 bg-red-200 rounded-lg shadow">
-                            <p>{recommendations.error}</p>
-                        </div>
-                    ) : (
-                        <>
+                <AnimatePresence>
+                    {recommendations && (
+                        recommendations.error ? (
                             <motion.div
-                                className="mt-6 bg-gray-200 p-4 rounded-lg shadow-inner"
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ duration: 0.5 }}
+                                className="mt-4 p-4 bg-red-200 rounded-lg shadow"
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.95 }}
+                                transition={{ duration: 0.3 }}
                             >
-                                <h2 className="text-lg font-bold mb-2">Best Overall Recommendation</h2>
-                                <p><strong>Owner:</strong> {recommendations.best_overall.owner}</p>
-                                <p><strong>Variety:</strong> {recommendations.best_overall.variety}</p>
-                                <p><strong>Processing Method:</strong> {recommendations.best_overall.processing_method}</p>
-                                <p><strong>Quality:</strong> {recommendations.best_overall.quality}</p>
+                                <p>{recommendations.error}</p>
                             </motion.div>
-
-                            <h2 className="text-lg font-bold mt-6 mb-2">Best Matches for Each Attribute</h2>
-                            {Object.entries(recommendations.best_matches_per_attribute).map(([attribute, match]) => (
+                        ) : (
+                            <>
                                 <motion.div
-                                    key={attribute}
-                                    className="mt-4 bg-gray-100 p-4 rounded-lg shadow"
-                                    initial={{ opacity: 0, y: 10 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ duration: 0.4 }}
+                                    className="mt-6 bg-gray-200 p-4 rounded-lg shadow-inner"
+                                    variants={cardVariants}
                                 >
-                                    <h3 className="text-md font-semibold capitalize">{attribute}</h3>
-                                    <p><strong>Owner:</strong> {match.owner}</p>
-                                    <p><strong>Variety:</strong> {match.variety}</p>
-                                    <p><strong>Processing Method:</strong> {match.processing_method}</p>
-                                    <p><strong>Similarity Score:</strong> {match.similarity_score.toFixed(2)}</p>
+                                    <h2 className="text-lg font-bold mb-2">Best Overall Recommendation</h2>
+                                    <p><strong>Owner:</strong> {recommendations.best_overall.owner}</p>
+                                    <p><strong>Variety:</strong> {recommendations.best_overall.variety}</p>
+                                    <p><strong>Processing Method:</strong> {recommendations.best_overall.processing_method}</p>
+                                    <p><strong>Quality:</strong> {recommendations.best_overall.quality}</p>
+                                    {/* Google Search Link */}
+                                    <motion.a
+                                        href={generateGoogleSearchUrl(
+                                            recommendations.best_overall.owner,
+                                            recommendations.best_overall.variety,
+                                            recommendations.best_overall.processing_method
+                                        )}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-blue-600 underline mt-2 inline-block"
+                                        variants={linkVariants}
+                                        initial="hidden"
+                                        animate="visible"
+                                    >
+                                        Search on Google
+                                    </motion.a>
                                 </motion.div>
-                            ))}
-                        </>
-                    )
-                )}
 
-                {/* Test CORS Button */}
+                                <h2 className="text-lg font-bold mt-6 mb-2">Best Matches for Each Attribute</h2>
+                                <motion.div
+                                    variants={containerVariants}
+                                    initial="hidden"
+                                    animate="visible"
+                                >
+                                    {['best_aroma', 'best_flavor', 'best_acidity', 'best_body', 'best_sweetness'].map((key) => {
+                                        const match = recommendations[key];
+                                        const attribute = key.replace('best_', '');
+                                        return (
+                                            <motion.div
+                                                key={attribute}
+                                                className="mt-4 bg-gray-100 p-4 rounded-lg shadow"
+                                                variants={cardVariants}
+                                                whileHover={{ scale: 1.02, boxShadow: "0px 4px 15px rgba(0, 0, 0, 0.2)" }}
+                                            >
+                                                <h3 className="text-md font-semibold capitalize">{attribute}</h3>
+                                                <p><strong>Owner:</strong> {match.owner}</p>
+                                                <p><strong>Variety:</strong> {match.variety}</p>
+                                                <p><strong>Processing Method:</strong> {match.processing_method}</p>
+                                                <p><strong>{attribute.charAt(0).toUpperCase() + attribute.slice(1)} Score:</strong> {match[attribute]}</p>
+                                                {/* Google Search Link */}
+                                                <motion.a
+                                                    href={generateGoogleSearchUrl(
+                                                        match.owner,
+                                                        match.variety,
+                                                        match.processing_method
+                                                    )}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="text-blue-600 underline mt-2 inline-block"
+                                                    variants={linkVariants}
+                                                    initial="hidden"
+                                                    animate="visible"
+                                                >
+                                                    Search on Google
+                                                </motion.a>
+                                            </motion.div>
+                                        );
+                                    })}
+                                </motion.div>
+                            </>
+                        )
+                    )}
+                </AnimatePresence>
+
                 <motion.button
                     onClick={testCors}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    className="w-full bg-green-500 text-white py-2 rounded-lg mt-4 font-semibold max-w-xs"
+                    variants={secondaryButtonVariants}
+                    initial="initial"
+                    whileHover="hover"
+                    whileTap="tap"
+                    className="w-full bg-green-500 text-white py-2 rounded-lg mt-4 font-semibold shadow-md focus:outline-none flex items-center justify-center"
                 >
-                    {loading ? "Testing CORS..." : "Test CORS"}
+                    {loading ? (
+                        <>
+                            Testing CORS...
+                            <Spinner />
+                        </>
+                    ) : (
+                        "Test CORS"
+                    )}
                 </motion.button>
 
                 {/* Display CORS Test Result */}
-                {corsTestResult && (
-                    <div className="mt-4 p-4 bg-gray-200 rounded-lg shadow">
-                        <p>{corsTestResult}</p>
-                    </div>
-                )}
-            </div>
-        </div>
-    );
-};
+                <AnimatePresence>
+                    {corsTestResult && (
+                        <motion.div
+                            className="mt-4 p-4 bg-gray-200 rounded-lg shadow"
+                            initial={{ opacity: 0, y: -10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -10 }}
+                            transition={{ duration: 0.3 }}
+                        >
+                            <p>{corsTestResult}</p>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+            </motion.div>
+        </motion.div>
+        );
+    };
 
-export default RecommendationEngine;
+    export default RecommendationEngine;
