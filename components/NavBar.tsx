@@ -264,9 +264,10 @@ const menuItems: MenuItem[] = [
     subItems: [
       { label: 'View Journal', href: '/protected/journal' },
       { label: 'Upload Journal', href: '/protected/journal/entry' },
-      { label: 'Add Your sub menu', href: '/protected/journal/stats' }
+      { label: 'Start Brew', href: '/protected/journal/brew/start' }
     ]
   },
+  
   {
     label: 'BrewGuides',
     href: '/protected/brewguides',
@@ -280,15 +281,21 @@ const menuItems: MenuItem[] = [
   {
     label: 'Profile',
     href: '/protected/profile',
-    icon: <User className="h-5 w-5" />
+    icon: <User className="h-5 w-5" />,
+    subItems: [
+      { label: 'View Profile', href: '/protected/profile' },
+      { label: 'Create Help Thread', href: '/protected/createhelpthread' }
+
+    ]
   },
   {
     label: 'CoffeeBeans',
     href: '/protected/coffeebeans',
     icon: <Coffee className="h-5 w-5" />,
     subItems: [
-      { label: 'Add Coffee Beans', href: '/protected/coffeebeans/' },
-      { label: 'add your sub menu', href: '/protected/coffeebeans/add' },
+     
+      { label: 'Add Coffee Beans', href: '/protected/coffeebeans' },
+      { label: 'Coffee-Wheel', href: '/protected/coffeewheel' },
       { label: 'add your sub menu', href: '/protected/coffeebeans/roasters' }
     ]
   },
