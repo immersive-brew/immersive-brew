@@ -272,7 +272,7 @@ const menuItems: MenuItem[] = [
     href: '/protected/brewguides',
     icon: <Coffee className="h-5 w-5" />,
     subItems: [
-      { label: 'add your sub menu', href: '/protected/brewguides/pourover' },
+      { label: 'View BrewGuides', href: '/protected/brewguides' },
       { label: 'add your sub menu', href: '/protected/brewguides/frenchpress' },
       { label: 'add your sub menu', href: '/protected/brewguides/aeropress' }
     ]
@@ -287,7 +287,7 @@ const menuItems: MenuItem[] = [
     href: '/protected/coffeebeans',
     icon: <Coffee className="h-5 w-5" />,
     subItems: [
-      { label: 'add your sub menu', href: '/protected/coffeebeans/collection' },
+      { label: 'Add Coffee Beans', href: '/protected/coffeebeans/' },
       { label: 'add your sub menu', href: '/protected/coffeebeans/add' },
       { label: 'add your sub menu', href: '/protected/coffeebeans/roasters' }
     ]
@@ -297,7 +297,7 @@ const menuItems: MenuItem[] = [
     href: '/protected/espressojournalpage',
     icon: <Coffee className="h-5 w-5" />,
     subItems: [
-      { label: 'add your sub menu', href: '/protected/espresso/shots' },
+      { label: 'View Espresso', href: '/protected/espressojournalpage' },
       { label: 'add your sub menu', href: '/protected/espresso/recipes' },
       { label: 'add your sub menu', href: '/protected/espresso/equipment' }
     ]
