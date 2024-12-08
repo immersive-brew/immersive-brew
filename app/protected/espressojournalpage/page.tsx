@@ -1,6 +1,6 @@
 
 import { createClient } from '@/utils/supabase/server';
-import HeaderBar from '@/components/HeaderBar';
+
 import AuthButton from '@/components/AuthButton';
 import ExpressoJournalClient from '@/components/ExpressoJournalClient';
 import { redirect } from 'next/navigation';
@@ -18,7 +18,7 @@ export default async function ExpressoJournalPage() {
   
   return (
     <div className="min-h-screen text-[#4A2C2A]">
-      <HeaderBar />
+     
       <main className="container mx-auto px-4 py-8">
         <div className="flex justify-between items-center mb-8">
           <div className="w-1/3"></div>
