@@ -180,6 +180,8 @@ import CoffeeAnimation from '@/components/CoffeePourAnimation';
 import { headers } from 'next/headers';
 import Link from 'next/link';
 import AuthButton from '@/components/AuthButton';
+import ChatBot from '@/components/ChatBot';
+
 
 const poppins = Poppins({
     subsets: ['latin'],
@@ -314,6 +316,7 @@ export default function RootLayout({
                     <main className="flex-1 w-full mx-auto">
                         <div className="max-w-7xl mx-auto px-4">
                             {children}
+                          <ChatBot />
                         </div>
                     </main>
 

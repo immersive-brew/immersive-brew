@@ -5,5 +5,6 @@ export default function TestPage() {
     <div className="p-4 max-w-lg mx-auto">
       <RecommendationEngine />
     </div>
+    
   );
 }
