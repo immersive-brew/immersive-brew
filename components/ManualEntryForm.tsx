@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { createClient } from '@/utils/supabase/client';
+import { userAgent } from 'next/server';
 
 type JournalEntryType = {
   id: string; // Assuming 'id' is UUID
@@ -11,6 +12,7 @@ type JournalEntryType = {
   grind_setting: string;
   overall_time: number;
   recipeid?: string; // 'recipeid' is UUID
+  userid?: string;
 };
 
 type RecipeType = {
@@ -25,6 +27,11 @@ interface ManualEntryFormProps {
 }
 
 export default function ManualEntryForm({ entry, onUpdate, onCancel }: ManualEntryFormProps) {
+  const [user, setCurrentUser] = useState<any>(null);
+
+  // Initialize Supabase client
+  const supabase = createClient();
+
   const [formData, setFormData] = useState({
     temperature: '',
     coffeeWeight: '',
@@ -33,14 +40,14 @@ export default function ManualEntryForm({ entry, onUpdate, onCancel }: ManualEnt
     minutes: '',
     seconds: '',
     recipeId: '', // Keep as string
+    userId: '',
   });
 
   const [recipes, setRecipes] = useState<RecipeType[]>([]);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-  // Initialize Supabase client
-  const supabase = createClient();
+  
 
   // Fetch all recipes from the database
   const fetchRecipes = async () => {
@@ -62,6 +69,19 @@ export default function ManualEntryForm({ entry, onUpdate, onCancel }: ManualEnt
   };
 
   useEffect(() => {
+    const fetchUser = async () => {
+      const {
+        data: { user },
+        error,
+      } = await supabase.auth.getUser();
+      if (error) {
+        console.error('Error fetching user:', error.message);
+      } else {
+        setCurrentUser(user);
+        console.log('Fetched user:', user);
+      }
+    };
+    fetchUser();
     fetchRecipes();
   }, []);
 
@@ -77,6 +97,7 @@ export default function ManualEntryForm({ entry, onUpdate, onCancel }: ManualEnt
         minutes: minutes.toString(),
         seconds: seconds.toString(),
         recipeId: entry.recipeid || '', // No conversion needed
+        userId: user.id,
       });
     }
   }, [entry]);
@@ -118,6 +139,7 @@ export default function ManualEntryForm({ entry, onUpdate, onCancel }: ManualEnt
       grind_setting: formData.grindSetting,
       overall_time: totalSeconds,
       recipeid: formData.recipeId, // Pass as string (UUID)
+      userid: user.id,
     };
 
     console.log('Updated data:', updatedData);
@@ -156,6 +178,7 @@ export default function ManualEntryForm({ entry, onUpdate, onCancel }: ManualEnt
             minutes: '',
             seconds: '',
             recipeId: '',
+            userId: user.id,
           });
         }
       }
