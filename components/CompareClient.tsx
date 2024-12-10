@@ -7,20 +7,42 @@ export default function CompareClient() {
   const [entries, setEntries] = useState([]);
   const [selectedEntries, setSelectedEntries] = useState([]); // Array of selected entry IDs
   const [entryData, setEntryData] = useState({}); // Store entry data in an object
+  const [user, setCurrentUser] = useState(null);
+  const [isUserFetched, setIsUserFetched] = useState(false); // Track if user is fetched
 
-  const supabase = useMemo(() => createClient(), []);
+  const supabase = createClient();
 
-  // Fetch entries on component mount
+  // Fetch the current user
+  useEffect(() => {
+    const fetchUser = async () => {
+      const { data, error } = await supabase.auth.getUser();
+      if (error) {
+        console.error("Error fetching user:", error);
+      } else {
+        setCurrentUser(data?.user);
+        console.log("Fetched user:", data?.user);
+      }
+      setIsUserFetched(true); // Indicate that user fetching is complete
+    };
+
+    fetchUser();
+  }, [supabase]);
+
+  // Fetch entries for the current user
   useEffect(() => {
     let isMounted = true;
+
     const fetchEntries = async () => {
+      if (!user || !isUserFetched) return;
+
       const { data, error } = await supabase
         .from("entries")
         .select("*")
+        .eq("userid", user?.id) // Filter by user ID
         .order("created_at", { ascending: false }); // Order by date descending
 
       if (error) {
-        console.error(error);
+        console.error("Error fetching entries:", error);
       } else if (isMounted) {
         setEntries(data);
       }
@@ -31,7 +53,7 @@ export default function CompareClient() {
     return () => {
       isMounted = false;
     };
-  }, [supabase]);
+  }, [supabase, user, isUserFetched]);
 
   // Fetch data for selected entries
   useEffect(() => {
@@ -78,6 +100,19 @@ export default function CompareClient() {
     }
   }, [selectedEntries, entryData, supabase]);
 
+  const formatDateTime = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleString("en-US", {
+      weekday: "short",
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "numeric",
+      minute: "numeric",
+      hour12: true,
+    });
+  };
+
   const fieldsToCompare = useMemo(
     () => [
       {
@@ -110,7 +145,6 @@ export default function CompareClient() {
         description: "The total brewing time in mm:ss format.",
         isNumeric: true, // Stored in seconds
       },
-      // Additional fields can be added here
       {
         key: "taste_notes",
         label: "Taste Notes",
@@ -131,13 +165,10 @@ export default function CompareClient() {
     (entryId) => {
       setSelectedEntries((prevSelectedEntries) => {
         if (prevSelectedEntries.includes(entryId)) {
-          // Remove entry
           return prevSelectedEntries.filter((id) => id !== entryId);
         } else if (prevSelectedEntries.length < 2) {
-          // Add entry
           return [...prevSelectedEntries, entryId];
         } else {
-          // Do not allow more than two entries
           return prevSelectedEntries;
         }
       });
@@ -254,23 +285,9 @@ export default function CompareClient() {
       : [];
 
   return (
-    <div
-      style={{
-        padding: "40px",
-        backgroundColor: "#f5f5f5",
-        minHeight: "100vh",
-        textAlign: "center",
-      }}
-    >
+    <div style={{ padding: "40px", backgroundColor: "#f5f5f5", minHeight: "100vh", textAlign: "center" }}>
       <h1 style={{ marginBottom: "40px" }}>Compare Entries</h1>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "center",
-          gap: "20px",
-          flexWrap: "wrap",
-        }}
-      >
+      <div style={{ display: "flex", justifyContent: "center", gap: "20px", flexWrap: "wrap" }}>
         {/* Selection Card */}
         <div
           style={{
@@ -284,31 +301,16 @@ export default function CompareClient() {
           <h2 style={{ marginBottom: "20px" }}>Select Entries (Up to 2)</h2>
           <div style={{ maxHeight: "400px", overflowY: "auto" }}>
             {entries.map((entry) => (
-              <div
-                key={entry.id}
-                style={{
-                  marginBottom: "10px",
-                  display: "flex",
-                  alignItems: "center",
-                }}
-              >
+              <div key={entry.id} style={{ marginBottom: "10px", display: "flex", alignItems: "center" }}>
                 <input
                   type="checkbox"
                   checked={selectedEntries.includes(entry.id)}
                   onChange={() => handleCheckboxChange(entry.id)}
-                  disabled={
-                    !selectedEntries.includes(entry.id) &&
-                    selectedEntries.length >= 2
-                  }
+                  disabled={!selectedEntries.includes(entry.id) && selectedEntries.length >= 2}
                   style={{ width: "16px", height: "16px" }}
                 />
-                <label
-                  style={{ marginLeft: "8px", cursor: "pointer" }}
-                  onClick={() => handleCheckboxChange(entry.id)}
-                >
-                  {`Entry ${entry.id} - ${new Date(
-                    entry.created_at
-                  ).toLocaleDateString()}`}
+                <label style={{ marginLeft: "8px", cursor: "pointer" }}>
+                  {formatDateTime(entry.created_at)}
                 </label>
               </div>
             ))}
@@ -356,7 +358,7 @@ export default function CompareClient() {
                         width: "25%",
                       }}
                     >
-                      Entry {selectedEntries[0]}
+                      Entry 1
                     </th>
                     <th
                       style={{
@@ -376,7 +378,7 @@ export default function CompareClient() {
                         width: "25%",
                       }}
                     >
-                      Entry {selectedEntries[1]}
+                      Entry 2
                     </th>
                   </tr>
                 </thead>
@@ -385,118 +387,22 @@ export default function CompareClient() {
                     const value1 = entryData[selectedEntries[0]][field.key];
                     const value2 = entryData[selectedEntries[1]][field.key];
 
-                    const isDifferent =
-                      field.isNumeric
-                        ? value1 !== value2
-                        : value1 !== value2;
-
-                    const cellStyle = {
-                      borderBottom: "1px solid #eee",
-                      padding: "10px",
-                      backgroundColor: isDifferent ? "#ffe5e5" : "#e5ffe5",
-                    };
-
                     return (
                       <tr key={field.key}>
-                        <td
-                          style={{
-                            borderBottom: "1px solid #eee",
-                            padding: "10px",
-                          }}
-                        >
-                          <strong
-                            title={field.description} // Tooltip using title attribute
-                            style={{ cursor: "help" }}
-                          >
-                            {field.label}
-                          </strong>
-                        </td>
-                        <td style={cellStyle}>
-                          {field.key === "overall_time"
-                            ? formatTime(value1)
-                            : value1 ?? "N/A"}
-                        </td>
-                        <td
-                          style={{
-                            borderBottom: "1px solid #eee",
-                            padding: "10px",
-                            textAlign: "center",
-                          }}
-                        >
-                          {calculateDifference(field, value1, value2)}
-                        </td>
-                        <td style={cellStyle}>
-                          {field.key === "overall_time"
-                            ? formatTime(value2)
-                            : value2 ?? "N/A"}
-                        </td>
+                        <td>{field.label}</td>
+                        <td>{value1 ?? "N/A"}</td>
+                        <td>{calculateDifference(field, value1, value2)}</td>
+                        <td>{value2 ?? "N/A"}</td>
                       </tr>
                     );
                   })}
-                  {/* Recipe Details */}
-                  {entryData[selectedEntries[0]].recipe &&
-                    entryData[selectedEntries[1]].recipe && (
-                      <>
-                        <tr>
-                          <td
-                            colSpan={4}
-                            style={{
-                              paddingTop: "20px",
-                              fontWeight: "bold",
-                            }}
-                          >
-                            Recipe Details
-                          </td>
-                        </tr>
-                        <tr>
-                          <td
-                            style={{
-                              borderBottom: "1px solid #eee",
-                              padding: "10px",
-                            }}
-                          >
-                            <strong
-                              title="The name of the recipe."
-                              style={{ cursor: "help" }}
-                            >
-                              Recipe Name
-                            </strong>
-                          </td>
-                          <td
-                            style={{ borderBottom: "1px solid #eee", padding: "10px" }}
-                          >
-                            {entryData[selectedEntries[0]].recipe.name || "N/A"}
-                          </td>
-                          <td
-                            style={{
-                              borderBottom: "1px solid #eee",
-                              padding: "10px",
-                              textAlign: "center",
-                            }}
-                          >
-                            {entryData[selectedEntries[0]].recipe.name !==
-                            entryData[selectedEntries[1]].recipe.name ? (
-                              <span style={{ color: "red" }}>Different</span>
-                            ) : (
-                              <span style={{ color: "green" }}>Same</span>
-                            )}
-                          </td>
-                          <td
-                            style={{ borderBottom: "1px solid #eee", padding: "10px" }}
-                          >
-                            {entryData[selectedEntries[1]].recipe.name || "N/A"}
-                          </td>
-                        </tr>
-                        {/* Add more recipe fields as necessary */}
-                      </>
-                    )}
                 </tbody>
               </table>
             </div>
           )}
       </div>
 
-      {/* Analysis Card */}
+      {/* Analysis Section */}
       {explanations.length > 0 && (
         <div
           style={{

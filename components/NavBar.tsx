@@ -32,7 +32,8 @@ const menuItems: MenuItem[] = [
     subItems: [
       { label: 'View Journal', href: '/protected/journal' },
       { label: 'Upload Journal', href: '/protected/journal/entry' },
-      { label: 'Start Brew', href: '/protected/journal/brew/' }
+      { label: 'Start Brew', href: '/protected/journal/brew/' },
+      { label: 'Compare Entries', href: '/protected/journal/compare' },
     ]
   },
   
