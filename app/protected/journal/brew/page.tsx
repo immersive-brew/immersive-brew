@@ -3,11 +3,62 @@ import AuthButton from "@/components/AuthButton";
 import { createClient } from "@/utils/supabase/server";
 import RatioCalculator from "@/components/RatioCalculator";
 import { redirect } from "next/navigation";
-import RecipeSelector from "@/components/RecipeSelector"; // Import the client component
+import RecipeSelector from "@/components/RecipeSelector";
 
 interface StartBrewPageProps {
   searchParams: Record<string, string | string[]>;
 }
+
+interface Feedback {
+  feedback_user?: string;            // e.g. 'Bitter'
+  feedback_suggestion?: string;      // e.g. "Extract Less, Use More Coffee."
+  feedback_expected_output?: string; // e.g. "Richer, Fruitier Cup of Coffee."
+}
+
+interface LatestBrew {
+  temperature: number;
+  coffee_weight: number;
+  water_weight: number;
+  grind_setting: number;
+  overall_time: number;
+  recipeid?: string;
+}
+
+// Example suggestions mapping:
+// Keys match feedback_user values, and for each feedback we define how to adjust parameters.
+// Adjust or add entries as needed for different feedback_user values.
+const suggestedChanges: Record<string, Array<{
+  param: string;
+  direction: "up" | "down";
+  amount: number;
+  reason?: string;
+}>> = {
+  Bitter: [
+    {
+      param: "temperature",
+      direction: "down",
+      amount: 2,
+      reason: "Lower temperature to reduce bitterness."
+    },
+    {
+      param: "coffee_weight",
+      direction: "up",
+      amount: 2,
+      reason: "Use slightly more coffee for balance."
+    }
+  ],
+  Dull: [
+    {
+      param: "grind_setting",
+      direction: "down",
+      amount: 1,
+      reason: "Finer grind to extract more complexity."
+    }
+  ],
+  // Add more feedback-based suggestions here...
+  // 'Pleasant' might have no changes because it's already perfect.
+  Pleasant: [],
+};
 
 export default async function StartBrewPage({ searchParams }: StartBrewPageProps) {
   const supabase = createClient();
@@ -22,7 +73,7 @@ export default async function StartBrewPage({ searchParams }: StartBrewPageProps
     return redirect("/login");
   }
 
-  // Fetch latest feedback from 'profiles' table
+  // Fetch profile with latest feedback
   const { data: profile, error: profileError } = await supabase
     .from("profiles")
     .select("latest_feedback")
@@ -31,6 +82,11 @@ export default async function StartBrewPage({ searchParams }: StartBrewPageProps
 
   if (profileError) {
     console.error("Error fetching profile:", profileError);
+  }
+
+  let feedback: Feedback | null = null;
+  if (profile && profile.latest_feedback) {
+    feedback = profile.latest_feedback;
   }
 
   // Fetch latest brew entry from 'entries' table
@@ -45,53 +101,74 @@ export default async function StartBrewPage({ searchParams }: StartBrewPageProps
     console.error("Error fetching latest brew:", entriesError);
   }
 
+  // Get the applicable suggestions for the user's feedback
+  const currentSuggestions = feedback?.feedback_user
+    ? suggestedChanges[feedback.feedback_user] || []
+    : [];
+
+  // Helper function to display a parameter line with suggestions
+  const renderParameterWithSuggestion = (
+    label: string,
+    value: number,
+    paramKey: string
+  ) => {
+    const suggestion = currentSuggestions.find((s) => s.param === paramKey);
+
+    return (
+      <p className="mt-2">
+        <strong>{label}:</strong> {value}
+        {suggestion && (
+          <span className="ml-2">
+            {suggestion.direction === "up" ? (
+              <span className="text-green-600 font-bold">↑ +{suggestion.amount}</span>
+            ) : (
+              <span className="text-red-600 font-bold">↓ -{suggestion.amount}</span>
+            )}
+            {suggestion.reason && (
+              <span className="ml-2 text-sm text-gray-600 italic">({suggestion.reason})</span>
+            )}
+          </span>
+        )}
+      </p>
+    );
+  };
+
   return (
     <div className="flex-1 w-full flex flex-col gap-20 items-center">
-
       <div className="max-w-4xl w-full">
-        {/* Main content */}
         <h1 className="text-4xl font-bold text-center mt-10">Start Your Brew</h1>
         <p className="text-center mt-4 text-lg">
           Customize your manual coffee brew and start brewing.
         </p>
 
         {/* Display Latest Feedback */}
-        {profile?.latest_feedback ? (
+        {feedback ? (
           <div className="mt-8 bg-gray-100 p-4 rounded">
             <h2 className="text-2xl font-bold">Latest Feedback</h2>
             <p className="mt-2">
-              <strong>Taste:</strong> {profile.latest_feedback.feedback_user}
+              <strong>Taste:</strong> {feedback.feedback_user || "No taste feedback provided"}
             </p>
             <p>
-              <strong>Advice:</strong> {profile.latest_feedback.feedback_suggestion}
+              <strong>Advice:</strong> {feedback.feedback_suggestion || "No advice provided"}
             </p>
             <p>
-              <strong>Expected Output:</strong> {profile.latest_feedback.feedback_expected_output}
+              <strong>Expected Output:</strong>{" "}
+              {feedback.feedback_expected_output || "No expected output provided"}
             </p>
           </div>
         ) : (
           <p className="mt-8 text-gray-500">No feedback available yet.</p>
         )}
 
-        {/* Display Latest Brew */}
+        {/* Display Latest Brew and Suggestions */}
         {latestBrew ? (
           <div className="mt-8 bg-gray-100 p-4 rounded">
             <h2 className="text-2xl font-bold">Latest Brew</h2>
-            <p className="mt-2">
-              <strong>Temperature:</strong> {latestBrew.temperature}°C
-            </p>
-            <p>
-              <strong>Coffee Weight:</strong> {latestBrew.coffee_weight}g
-            </p>
-            <p>
-              <strong>Water Weight:</strong> {latestBrew.water_weight}g
-            </p>
-            <p>
-              <strong>Grind Setting:</strong> {latestBrew.grind_setting}
-            </p>
-            <p>
-              <strong>Overall Time:</strong> {latestBrew.overall_time}s
-            </p>
+            {renderParameterWithSuggestion("Temperature", latestBrew.temperature, "temperature")}
+            {renderParameterWithSuggestion("Coffee Weight", latestBrew.coffee_weight, "coffee_weight")}
+            {renderParameterWithSuggestion("Water Weight", latestBrew.water_weight, "water_weight")}
+            {renderParameterWithSuggestion("Grind Setting", latestBrew.grind_setting, "grind_setting")}
+            {renderParameterWithSuggestion("Overall Time", latestBrew.overall_time, "overall_time")}
           </div>
         ) : (
           <p className="mt-8 text-gray-500">No brews available yet.</p>
@@ -100,16 +177,12 @@ export default async function StartBrewPage({ searchParams }: StartBrewPageProps
         {/* Coffee Form for Manual Brewing */}
         <div className="mt-8">
           <form
-            action="/protected/journal/brew/start" // Updated action
-            method="GET" // You can change to "POST" if preferred
+            action="/protected/journal/brew/start"
+            method="GET"
             className="flex flex-col gap-4 items-center"
           >
-            {/* Recipe Selector */}
             <RecipeSelector />
-
-            {/* Ratio Calculator */}
             <RatioCalculator />
-
             {/* Temperature Input */}
             <div className="flex flex-col">
               <label htmlFor="temperature" className="font-semibold">
@@ -118,11 +191,11 @@ export default async function StartBrewPage({ searchParams }: StartBrewPageProps
               <input
                 type="number"
                 id="temperature"
-                name="temperature" // Added name attribute for temperature
+                name="temperature"
                 className="p-2 border rounded w-80"
                 required
-                min={50} // Setting a reasonable minimum temperature
-                max={100} // Setting a reasonable maximum temperature
+                min={50}
+                max={100}
               />
             </div>
 
@@ -134,17 +207,17 @@ export default async function StartBrewPage({ searchParams }: StartBrewPageProps
               <input
                 type="number"
                 id="grindSetting"
-                name="grindSetting" // Added name attribute for grind setting
+                name="grindSetting"
                 className="p-2 border rounded w-80"
                 required
-                min={1} // Setting a minimum grind setting
-                max={10} // Setting a maximum grind setting
+                min={1}
+                max={10}
               />
             </div>
 
             {/* Start Button */}
             <button
-              type="submit" // Changed to submit button
+              type="submit"
               className="mt-6 bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"
             >
               Start Brewing
