@@ -57,9 +57,6 @@ export default async function Page() {
         <div className="flex flex-col items-center mt-6">
           <Notification />
         </div>
-        <div className="flex flex-col items-center mt-6">
-          <BlindTastingMenu />
-        </div>
 
       </div>
     </div>

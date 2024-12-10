@@ -36,7 +36,7 @@ export default async function StartBrewPage({ searchParams }: StartBrewPageProps
   // Fetch latest brew entry from 'entries' table
   const { data: latestBrew, error: entriesError } = await supabase
     .from("entries")
-    .select("temperature, coffee_weight, water_weight, grind_setting, overall_time")
+    .select("temperature, coffee_weight, water_weight, grind_setting, overall_time, recipeid")
     .order("created_at", { ascending: false })
     .limit(1)
     .single();
@@ -47,15 +47,6 @@ export default async function StartBrewPage({ searchParams }: StartBrewPageProps
 
   return (
     <div className="flex-1 w-full flex flex-col gap-20 items-center">
-      <div className="w-full">
-        {/* Navigation bar (Deploy and Auth buttons) */}
-        <nav className="w-full flex justify-center border-b border-b-foreground/10 h-16">
-          <div className="w-full max-w-4xl flex justify-between items-center p-3 text-sm">
-            <DeployButton />
-            <AuthButton />
-          </div>
-        </nav>
-      </div>
 
       <div className="max-w-4xl w-full">
         {/* Main content */}
