@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
-import Modal from 'react-modal'; // Ensure react-modal is installed
+import Modal from 'react-modal';
 
 export default function WaterQualityTracker() {
   const [userId, setUserId] = useState<string | null>(null);
@@ -14,6 +14,7 @@ export default function WaterQualityTracker() {
   const [waterAmount, setWaterAmount] = useState<number | null>(null);
   const [customMinerals, setCustomMinerals] = useState<string[]>([]);
   const [modalIsOpen, setModalIsOpen] = useState(false);
+  const [showResourcesStep, setShowResourcesStep] = useState(true);
 
   // Initialize Supabase client
   const supabase = createClient();
@@ -33,7 +34,7 @@ export default function WaterQualityTracker() {
     fetchUserId();
   }, [supabase]);
 
-  // Water types with images (assuming images are in /public/images/)
+  // Water types with images
   const waterTypes = [
     {
       name: 'Third Wave Water (light roast profile)',
@@ -77,7 +78,13 @@ export default function WaterQualityTracker() {
     setPacketCount(null);
     setWaterAmount(null);
     setCustomMinerals([]);
+    setShowResourcesStep(true);
     setModalIsOpen(true);
+  };
+
+  // Proceed to the data input step
+  const handleContinue = () => {
+    setShowResourcesStep(false);
   };
 
   // Handle submission to Supabase
@@ -139,6 +146,10 @@ export default function WaterQualityTracker() {
     },
   };
 
+  // Generate dropdown options
+  const packetOptions = Array.from({ length: 11 }, (_, i) => i); // 0 to 10
+  const waterAmountOptions = Array.from({ length: 10 }, (_, i) => (i + 1) * 0.5); // 0.5 to 5.0 in increments of 0.5
+
   // Inline styles object
   const styles = {
     container: {
@@ -185,11 +196,15 @@ export default function WaterQualityTracker() {
       marginBottom: '15px',
       fontWeight: 'bold' as 'bold',
     },
-    input: {
+    select: {
       width: '100%',
       padding: '10px',
       marginTop: '5px',
       fontSize: '1em',
+      backgroundColor: '#fff',
+      border: '1px solid #ccc',
+      borderRadius: '5px',
+      color: '#333',
     },
     mineralsSection: {
       width: '100%',
@@ -231,6 +246,10 @@ export default function WaterQualityTracker() {
       borderRadius: '5px',
       cursor: 'pointer',
     },
+    videoContainer: {
+      width: '100%',
+      marginBottom: '20px',
+    },
   };
 
   return (
@@ -265,7 +284,6 @@ export default function WaterQualityTracker() {
         ))}
       </div>
 
-      {/* Modal for input */}
       <Modal
         isOpen={modalIsOpen}
         onRequestClose={() => setModalIsOpen(false)}
@@ -283,72 +301,120 @@ export default function WaterQualityTracker() {
               height={200}
               style={styles.modalImage}
             />
-            <label style={styles.label}>
-              Number of Packets:
-              <input
-                type="number"
-                value={packetCount ?? ''}
-                onChange={(e) => setPacketCount(Number(e.target.value))}
-                style={styles.input}
-                min="0"
-              />
-            </label>
-            <label style={styles.label}>
-              Amount of Water (in liters):
-              <input
-                type="number"
-                value={waterAmount ?? ''}
-                onChange={(e) => setWaterAmount(Number(e.target.value))}
-                style={styles.input}
-                min="0"
-              />
-            </label>
-            {selectedWaterType.name === 'Custom Water' && (
-              <div style={styles.mineralsSection}>
-                <h3>Select Minerals Used:</h3>
-                {minerals.map((mineral) => (
-                  <label key={mineral} style={styles.checkboxLabel}>
-                    <input
-                      type="checkbox"
-                      value={mineral}
-                      checked={customMinerals.includes(mineral)}
-                      onChange={(e) => {
-                        if (e.target.checked) {
-                          setCustomMinerals([...customMinerals, mineral]);
-                        } else {
-                          setCustomMinerals(
-                            customMinerals.filter((m) => m !== mineral)
-                          );
-                        }
-                      }}
-                    />
-                    {mineral}
-                  </label>
-                ))}
-                <p style={styles.exampleText}>
-                  Example: For a balanced brew, you might use Calcium Chloride
-                  and Magnesium Sulfate.
-                </p>
-              </div>
+
+            {showResourcesStep ? (
+              <>
+                {/* Additional Resources Step */}
+                <div style={styles.videoContainer}>
+                  {/* Embed your video or other resources here */}
+                  <iframe
+                    width="100%"
+                    height="200"
+                    src="https://www.youtube.com/embed/dQw4w9WgXcQ"
+                    title="Resource Video"
+                    frameBorder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  ></iframe>
+                </div>
+                <p>Learn about the best practices for using {selectedWaterType.name}.</p>
+                <div style={styles.modalButtons}>
+                  <button
+                    onClick={handleContinue}
+                    style={styles.submitButton}
+                  >
+                    Continue
+                  </button>
+                  <button
+                    onClick={() => setModalIsOpen(false)}
+                    style={styles.cancelButton}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                {/* Input Fields Step */}
+                <label style={styles.label}>
+                  Number of Packets:
+                  <select
+                    style={styles.select}
+                    value={packetCount !== null ? packetCount : ''}
+                    onChange={(e) => setPacketCount(Number(e.target.value))}
+                  >
+                    <option value="" disabled>Select an option</option>
+                    {packetOptions.map((opt) => (
+                      <option key={opt} value={opt}>{opt}</option>
+                    ))}
+                  </select>
+                </label>
+
+                <label style={styles.label}>
+                  Amount of Water (in liters):
+                  <select
+                    style={styles.select}
+                    value={waterAmount !== null ? waterAmount : ''}
+                    onChange={(e) => setWaterAmount(Number(e.target.value))}
+                  >
+                    <option value="" disabled>Select an option</option>
+                    {waterAmountOptions.map((amt) => (
+                      <option key={amt} value={amt}>{amt} L</option>
+                    ))}
+                  </select>
+                </label>
+
+                {selectedWaterType.name === 'Custom Water' && (
+                  <div style={styles.mineralsSection}>
+                    <h3>Select Minerals Used:</h3>
+                    {minerals.map((mineral) => (
+                      <label key={mineral} style={styles.checkboxLabel}>
+                        <input
+                          type="checkbox"
+                          value={mineral}
+                          checked={customMinerals.includes(mineral)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setCustomMinerals([...customMinerals, mineral]);
+                            } else {
+                              setCustomMinerals(
+                                customMinerals.filter((m) => m !== mineral)
+                              );
+                            }
+                          }}
+                        />
+                        {mineral}
+                      </label>
+                    ))}
+                    <p style={styles.exampleText}>
+                      Example: For a balanced brew, you might use Calcium Chloride
+                      and Magnesium Sulfate.
+                    </p>
+                  </div>
+                )}
+                <div style={styles.modalButtons}>
+                  <button
+                    onClick={handleSubmit}
+                    style={{
+                      ...styles.submitButton,
+                      ...(loading ? styles.submitButtonDisabled : {}),
+                    }}
+                    disabled={loading}
+                  >
+                    {loading ? 'Submitting...' : 'Submit'}
+                  </button>
+                  <button
+                    onClick={() => {
+                      setModalIsOpen(false);
+                      setShowResourcesStep(true);
+                    }}
+                    style={styles.cancelButton}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </>
             )}
-            <div style={styles.modalButtons}>
-              <button
-                onClick={handleSubmit}
-                style={{
-                  ...styles.submitButton,
-                  ...(loading ? styles.submitButtonDisabled : {}),
-                }}
-                disabled={loading}
-              >
-                {loading ? 'Submitting...' : 'Submit'}
-              </button>
-              <button
-                onClick={() => setModalIsOpen(false)}
-                style={styles.cancelButton}
-              >
-                Cancel
-              </button>
-            </div>
           </div>
         )}
       </Modal>

@@ -34,6 +34,7 @@ const menuItems: MenuItem[] = [
       { label: 'Upload Journal', href: '/protected/journal/entry' },
       { label: 'Start Brew', href: '/protected/journal/brew/' },
       { label: 'Compare Entries', href: '/protected/journal/compare' },
+      { label: 'Share Entry', href: '/protected/generatelink' },
     ]
   },
   
@@ -43,8 +44,7 @@ const menuItems: MenuItem[] = [
     icon: <Coffee className="h-5 w-5" />,
     subItems: [
       { label: 'View BrewGuides', href: '/protected/brewguides' },
-      { label: 'add your sub menu', href: '/protected/brewguides/frenchpress' },
-      { label: 'add your sub menu', href: '/protected/brewguides/aeropress' }
+      { label: 'Create Help Thread', href: '/protected/createhelpthread' },
     ]
   },
   {
@@ -53,7 +53,7 @@ const menuItems: MenuItem[] = [
     icon: <User className="h-5 w-5" />,
     subItems: [
       { label: 'View Profile', href: '/protected/profile' },
-      { label: 'Create Help Thread', href: '/protected/createhelpthread' }
+      { label: 'Water Tracker', href: '/protected/WaterTracker' }
 
     ]
   },
