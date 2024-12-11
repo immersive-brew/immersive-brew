@@ -31,10 +31,11 @@ const menuItems: MenuItem[] = [
     icon: <Book className="h-5 w-5" />,
     subItems: [
       { label: 'View Journal', href: '/protected/journal' },
-      { label: 'Upload Journal', href: '/protected/journal/entry' },
+      { label: 'Upload Entry', href: '/protected/journal/entry' },
       { label: 'Start Brew', href: '/protected/journal/brew/' },
       { label: 'Compare Entries', href: '/protected/journal/compare' },
       { label: 'Share Entry', href: '/protected/generatelink' },
+      { label: 'Create Recipe', href: '/protected/recipe' },
     ]
   },
   
@@ -45,6 +46,7 @@ const menuItems: MenuItem[] = [
     subItems: [
       { label: 'View BrewGuides', href: '/protected/brewguides' },
       { label: 'Create Help Thread', href: '/protected/createhelpthread' },
+      { label: 'Find Local Roasters', href: '/protected/googleplaces' },
     ]
   },
   {
