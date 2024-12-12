@@ -34,12 +34,38 @@ export default async function Page() {
   return (
     <div className="flex flex-col bg-white shadow-md rounded-lg p-6 mt-8 items-center">
       <ModeToggle />
+<<<<<<< Updated upstream
       <h2 className="text-2xl font-semibold mb-4 text-center">
         Your current name: <span className="font-bold">{profile?.full_name}</span>
       </h2>
       <p className="text-center text-gray-600 mb-6">
         Would you like to change your name?
       </p>
+=======
+      <div className="flex flex-col bg-white shadow-md rounded-lg p-6 mt-8">
+        <h2 className="text-2xl font-semibold mb-4 text-center">
+          Your current name: <span className="font-bold">{profile?.full_name}</span>
+        </h2>
+        <p className="text-center text-gray-600 mb-6">
+          Would you like to change your name?
+        </p>
+
+        {/* Profile Form */}
+        <div className="flex flex-col items-center">
+          <ProfileForm profile={profile} />
+        </div>
+
+        {/* Delete Account Section */}
+        <div className="flex flex-col items-center mt-6">
+          <DeleteAccountButton />
+        </div>
+        <div className="flex flex-col items-center mt-6">
+          <CoffeeIntake />
+        </div>
+        <div className="flex flex-col items-center mt-6">
+          <Notification />
+        </div>
+>>>>>>> Stashed changes
 
       {/* Profile Form */}
       <div className="flex flex-col items-center">
