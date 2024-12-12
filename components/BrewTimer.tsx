@@ -162,8 +162,7 @@ const BrewTimer: React.FC<BrewTimerProps> = ({ stages, recipeId, temperature, gr
         alert("An error occurred while saving your brew data.");
       } else {
         alert("Brew data saved successfully!");
-        // Optionally redirect or perform other actions
-        router.push("/protected/journal"); // Replace with your desired route
+        router.push("/protected/coffeewheel");
       }
     } catch (error) {
       console.error("Unexpected error:", error);

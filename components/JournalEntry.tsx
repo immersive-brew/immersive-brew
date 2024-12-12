@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { createClient } from '@supabase/supabase-js';
+import { createClient } from '@/utils/supabase/client';
 import ManualEntryForm from '@/components/ManualEntryForm';
 
 type JournalEntryType = {
@@ -19,17 +19,41 @@ export default function JournalEntry() {
   const [loading, setLoading] = useState(true);
   const [editingEntry, setEditingEntry] = useState<JournalEntryType | null>(null);
   const [deleting, setDeleting] = useState<number | null>(null);
+  const [user, setCurrentUser] = useState<any>(null);
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-  const supabase = createClient(supabaseUrl, supabaseAnonKey);
+  const supabase = createClient();
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      const {
+        data: { user },
+        error,
+      } = await supabase.auth.getUser();
+      if (error) {
+        console.error('Error fetching user:', error.message);
+      } else {
+        setCurrentUser(user);
+        console.log('Fetched user:', user);
+      }
+    };
+
+    fetchUser();
+  }, []);
+
+  useEffect(() => {
+    if (user) {
+      fetchEntries();
+    }
+  }, [user]);
 
   const fetchEntries = async () => {
+    if (!user) return;
     setLoading(true);
     const { data, error } = await supabase
       .from('entries')
       .select('id, created_at, temperature, coffee_weight, water_weight, grind_setting, overall_time')
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
+      .eq('userid', user.id);
 
     if (error) {
       console.error('Error fetching journal entries:', error);
@@ -38,10 +62,6 @@ export default function JournalEntry() {
     }
     setLoading(false);
   };
-
-  useEffect(() => {
-    fetchEntries();
-  }, []);
 
   const formatTime = (seconds: number) => {
     const minutes = Math.floor(seconds / 60);
@@ -97,7 +117,15 @@ export default function JournalEntry() {
             <div key={entry.id} className="flex flex-col border border-gray-300 rounded-lg shadow-sm overflow-hidden">
               <div className="p-4 bg-gray-100">
                 <div className="text-xl font-semibold">
-                  Entry Date: {new Date(entry.created_at).toLocaleDateString()}
+                  Entry Date:{' '}
+                  {new Date(entry.created_at).toLocaleString('en-US', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    hour: 'numeric',
+                    minute: 'numeric',
+                    hour12: true,
+                  })}
                 </div>
               </div>
 

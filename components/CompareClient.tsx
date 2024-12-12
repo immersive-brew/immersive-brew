@@ -7,20 +7,42 @@ export default function CompareClient() {
   const [entries, setEntries] = useState([]);
   const [selectedEntries, setSelectedEntries] = useState([]); // Array of selected entry IDs
   const [entryData, setEntryData] = useState({}); // Store entry data in an object
+  const [user, setCurrentUser] = useState(null);
+  const [isUserFetched, setIsUserFetched] = useState(false); // Track if user is fetched
 
-  const supabase = useMemo(() => createClient(), []);
+  const supabase = createClient();
 
-  // Fetch entries on component mount
+  // Fetch the current user
+  useEffect(() => {
+    const fetchUser = async () => {
+      const { data, error } = await supabase.auth.getUser();
+      if (error) {
+        console.error("Error fetching user:", error);
+      } else {
+        setCurrentUser(data?.user);
+        console.log("Fetched user:", data?.user);
+      }
+      setIsUserFetched(true); // Indicate that user fetching is complete
+    };
+
+    fetchUser();
+  }, [supabase]);
+
+  // Fetch entries for the current user
   useEffect(() => {
     let isMounted = true;
+
     const fetchEntries = async () => {
+      if (!user || !isUserFetched) return;
+
       const { data, error } = await supabase
         .from("entries")
         .select("*")
+        .eq("userid", user?.id) // Filter by user ID
         .order("created_at", { ascending: false }); // Order by date descending
 
       if (error) {
-        console.error(error);
+        console.error("Error fetching entries:", error);
       } else if (isMounted) {
         setEntries(data);
       }
@@ -31,7 +53,7 @@ export default function CompareClient() {
     return () => {
       isMounted = false;
     };
-  }, [supabase]);
+  }, [supabase, user, isUserFetched]);
 
   // Fetch data for selected entries
   useEffect(() => {
@@ -78,6 +100,19 @@ export default function CompareClient() {
     }
   }, [selectedEntries, entryData, supabase]);
 
+  const formatDateTime = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleString("en-US", {
+      weekday: "short",
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "numeric",
+      minute: "numeric",
+      hour12: true,
+    });
+  };
+
   const fieldsToCompare = useMemo(
     () => [
       {
@@ -110,7 +145,18 @@ export default function CompareClient() {
         description: "The total brewing time in mm:ss format.",
         isNumeric: true, // Stored in seconds
       },
-      // Removed "recipe_id" field
+      {
+        key: "taste_notes",
+        label: "Taste Notes",
+        description: "User-described taste notes.",
+        isNumeric: false,
+      },
+      {
+        key: "rating",
+        label: "Rating",
+        description: "User rating out of 5.",
+        isNumeric: true,
+      },
     ],
     []
   );
@@ -119,13 +165,10 @@ export default function CompareClient() {
     (entryId) => {
       setSelectedEntries((prevSelectedEntries) => {
         if (prevSelectedEntries.includes(entryId)) {
-          // Remove entry
           return prevSelectedEntries.filter((id) => id !== entryId);
         } else if (prevSelectedEntries.length < 2) {
-          // Add entry
           return [...prevSelectedEntries, entryId];
         } else {
-          // Do not allow more than two entries
           return prevSelectedEntries;
         }
       });
@@ -194,6 +237,11 @@ export default function CompareClient() {
                 difference > 0 ? "+" : ""
               }${difference} seconds, influencing the extraction level.`;
               break;
+            case "rating":
+              explanation = `The rating differs by ${
+                difference > 0 ? "+" : ""
+              }${difference}, indicating a different user satisfaction level.`;
+              break;
             default:
               break;
           }
@@ -208,7 +256,9 @@ export default function CompareClient() {
             case "grind_setting":
               explanation = `Different grind settings (${value1} vs ${value2}) can lead to variations in extraction and flavor profiles.`;
               break;
-            // Removed "recipe_id" case
+            case "taste_notes":
+              explanation = `Taste notes are different, indicating a different flavor experience.`;
+              break;
             default:
               break;
           }
@@ -235,23 +285,9 @@ export default function CompareClient() {
       : [];
 
   return (
-    <div
-      style={{
-        padding: "40px",
-        backgroundColor: "#f5f5f5",
-        minHeight: "100vh",
-        textAlign: "center",
-      }}
-    >
+    <div style={{ padding: "40px", backgroundColor: "#f5f5f5", minHeight: "100vh", textAlign: "center" }}>
       <h1 style={{ marginBottom: "40px" }}>Compare Entries</h1>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "center",
-          gap: "20px",
-          flexWrap: "wrap",
-        }}
-      >
+      <div style={{ display: "flex", justifyContent: "center", gap: "20px", flexWrap: "wrap" }}>
         {/* Selection Card */}
         <div
           style={{
@@ -265,28 +301,16 @@ export default function CompareClient() {
           <h2 style={{ marginBottom: "20px" }}>Select Entries (Up to 2)</h2>
           <div style={{ maxHeight: "400px", overflowY: "auto" }}>
             {entries.map((entry) => (
-              <div
-                key={entry.id}
-                style={{
-                  marginBottom: "10px",
-                  display: "flex",
-                  alignItems: "center",
-                }}
-              >
+              <div key={entry.id} style={{ marginBottom: "10px", display: "flex", alignItems: "center" }}>
                 <input
                   type="checkbox"
                   checked={selectedEntries.includes(entry.id)}
                   onChange={() => handleCheckboxChange(entry.id)}
-                  disabled={
-                    !selectedEntries.includes(entry.id) &&
-                    selectedEntries.length >= 2
-                  }
+                  disabled={!selectedEntries.includes(entry.id) && selectedEntries.length >= 2}
                   style={{ width: "16px", height: "16px" }}
                 />
                 <label style={{ marginLeft: "8px", cursor: "pointer" }}>
-                  {`Entry ${entry.id} - ${new Date(
-                    entry.created_at
-                  ).toLocaleDateString()}`}
+                  {formatDateTime(entry.created_at)}
                 </label>
               </div>
             ))}
@@ -307,7 +331,13 @@ export default function CompareClient() {
               }}
             >
               <h2 style={{ marginBottom: "20px" }}>Comparison</h2>
-              <table style={{ width: "100%", borderCollapse: "collapse" }}>
+              <table
+                style={{
+                  width: "100%",
+                  borderCollapse: "collapse",
+                  tableLayout: "fixed",
+                }}
+              >
                 <thead>
                   <tr>
                     <th
@@ -328,7 +358,7 @@ export default function CompareClient() {
                         width: "25%",
                       }}
                     >
-                      Entry {selectedEntries[0]}
+                      Entry 1
                     </th>
                     <th
                       style={{
@@ -348,7 +378,7 @@ export default function CompareClient() {
                         width: "25%",
                       }}
                     >
-                      Entry {selectedEntries[1]}
+                      Entry 2
                     </th>
                   </tr>
                 </thead>
@@ -359,119 +389,20 @@ export default function CompareClient() {
 
                     return (
                       <tr key={field.key}>
-                        <td
-                          style={{
-                            borderBottom: "1px solid #eee",
-                            padding: "10px",
-                          }}
-                        >
-                          <strong>{field.label}</strong>
-                          <br />
-                          <small style={{ color: "#666" }}>
-                            {field.description}
-                          </small>
-                        </td>
-                        <td
-                          style={{
-                            borderBottom: "1px solid #eee",
-                            padding: "10px",
-                          }}
-                        >
-                          {field.key === "overall_time"
-                            ? formatTime(value1)
-                            : value1 ?? "N/A"}
-                        </td>
-                        <td
-                          style={{
-                            borderBottom: "1px solid #eee",
-                            padding: "10px",
-                            textAlign: "center",
-                          }}
-                        >
-                          {calculateDifference(field, value1, value2)}
-                        </td>
-                        <td
-                          style={{
-                            borderBottom: "1px solid #eee",
-                            padding: "10px",
-                          }}
-                        >
-                          {field.key === "overall_time"
-                            ? formatTime(value2)
-                            : value2 ?? "N/A"}
-                        </td>
+                        <td>{field.label}</td>
+                        <td>{value1 ?? "N/A"}</td>
+                        <td>{calculateDifference(field, value1, value2)}</td>
+                        <td>{value2 ?? "N/A"}</td>
                       </tr>
                     );
                   })}
-                  {/* Recipe Details */}
-                  {entryData[selectedEntries[0]].recipe &&
-                    entryData[selectedEntries[1]].recipe && (
-                      <>
-                        <tr>
-                          <td
-                            colSpan={4}
-                            style={{
-                              paddingTop: "20px",
-                              fontWeight: "bold",
-                            }}
-                          >
-                            Recipe Details
-                          </td>
-                        </tr>
-                        <tr>
-                          <td
-                            style={{
-                              borderBottom: "1px solid #eee",
-                              padding: "10px",
-                            }}
-                          >
-                            <strong>Recipe Name</strong>
-                            <br />
-                            <small style={{ color: "#666" }}>
-                              The name of the recipe.
-                            </small>
-                          </td>
-                          <td
-                            style={{
-                              borderBottom: "1px solid #eee",
-                              padding: "10px",
-                            }}
-                          >
-                            {entryData[selectedEntries[0]].recipe.name || "N/A"}
-                          </td>
-                          <td
-                            style={{
-                              borderBottom: "1px solid #eee",
-                              padding: "10px",
-                              textAlign: "center",
-                            }}
-                          >
-                            {entryData[selectedEntries[0]].recipe.name !==
-                            entryData[selectedEntries[1]].recipe.name ? (
-                              <span style={{ color: "red" }}>Different</span>
-                            ) : (
-                              <span style={{ color: "green" }}>Same</span>
-                            )}
-                          </td>
-                          <td
-                            style={{
-                              borderBottom: "1px solid #eee",
-                              padding: "10px",
-                            }}
-                          >
-                            {entryData[selectedEntries[1]].recipe.name || "N/A"}
-                          </td>
-                        </tr>
-                        {/* Add more recipe fields as necessary */}
-                      </>
-                    )}
                 </tbody>
               </table>
             </div>
           )}
       </div>
 
-      {/* Analysis Card */}
+      {/* Analysis Section */}
       {explanations.length > 0 && (
         <div
           style={{
