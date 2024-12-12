@@ -18,8 +18,6 @@ export default async function CoffeeBeansPage() {
 
   return (
     <div className="w-full flex flex-col items-center">
-     
-      <AuthButton />
       <CoffeeBeansClient userid={user.id} />
     </div>
   );
