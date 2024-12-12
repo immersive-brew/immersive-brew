@@ -58,7 +58,7 @@ const DisplayCommunity = () => {
           <CoffeeGridItem
             key={bean.id}
             id={bean.id}
-            imageUrl={bean.image_url}
+            imageUrl={bean.images}
             coffeeName={bean.name}
             onClick={handleItemClick}
           />
