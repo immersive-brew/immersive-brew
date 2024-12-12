@@ -2,6 +2,10 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
+import { createClient } from '@/utils/supabase/client';
+
+
+const supabase = createClient();
 
 interface CoffeeGridItemProps {
   id: string;
