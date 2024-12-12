@@ -24,7 +24,7 @@ const DisplayCommunity = () => {
 
   async function fetchCommunityCoffeeBeans() {
     try {
-      const { data, error } = await supabase.from("coffeebeans").select("id, image_url, name").not("images", "is", null);
+      const { data, error } = await supabase.from("coffeebeans").select("id, images, name").not("images", "is", null);
 
       if (error) {
         throw error;
