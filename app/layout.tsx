@@ -291,7 +291,7 @@ export default function RootLayout({
                                                 <div className="relative flex-shrink-0">
                                                     <CoffeeLogo />
                                                 </div>
-                                                <span className="text-5xl text-[#2c1010] transition-all duration-300 group-hover:text-[#3d1a1a]" style={{fontFamily: "'Pacifico', cursive"}}>
+                                                <span className="text-4xl text-[#2c1010] transition-all duration-300 group-hover:text-[#3d1a1a]" style={{fontFamily: "'Pacifico', cursive"}}>
                                                     ImmersiveBrew
                                                 </span>
                                             </div>
