@@ -31,8 +31,7 @@ const menuItems: MenuItem[] = [
     href: '/protected/journal',
     icon: <Book className="h-5 w-5" />,
     subItems: [
-      { label: 'View Journal', href: '/protected/journal' },
-      { label: 'Upload Journal', href: '/protected/journal/entry' },
+      { label: 'Upload Manual Entry', href: '/protected/journal/entry' },
       { label: 'Start Brew', href: '/protected/journal/brew/' },
       { label: 'Compare Entries', href: '/protected/journal/compare' },
       { label: 'Share Entry', href: '/protected/generatelink' },
@@ -43,7 +42,6 @@ const menuItems: MenuItem[] = [
     href: '/protected/brewguides',
     icon: <Coffee className="h-5 w-5" />,
     subItems: [
-      { label: 'View BrewGuides', href: '/protected/brewguides' },
       { label: 'Create Help Thread', href: '/protected/createhelpthread' },
     ],
   },

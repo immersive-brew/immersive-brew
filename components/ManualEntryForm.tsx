@@ -86,7 +86,7 @@ export default function ManualEntryForm({ entry, onUpdate, onCancel }: ManualEnt
   }, []);
 
   useEffect(() => {
-    if (entry) {
+    if (entry && user) { // Ensure both `entry` and `user` are available
       const minutes = Math.floor(entry.overall_time / 60);
       const seconds = entry.overall_time % 60;
       setFormData({
@@ -97,10 +97,11 @@ export default function ManualEntryForm({ entry, onUpdate, onCancel }: ManualEnt
         minutes: minutes.toString(),
         seconds: seconds.toString(),
         recipeId: entry.recipeid || '', // No conversion needed
-        userId: user.id,
+        userId: user.id, // Access only if `user` is non-null
       });
     }
-  }, [entry]);
+  }, [entry, user]);
+  
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setFormData((prev) => ({
