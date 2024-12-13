@@ -23,9 +23,6 @@ export default async function ExpressoJournalPage() {
         <div className="flex justify-between items-center mb-8">
           <div className="w-1/3"></div>
           <h1 className="text-3xl font-bold text-center w-1/3">Espresso Journal</h1>
-          <div className="w-1/3 flex justify-end">
-            <AuthButton />
-          </div>
         </div>
         <ExpressoJournalClient userid={user.id} />
       </main>
