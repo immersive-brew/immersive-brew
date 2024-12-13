@@ -75,56 +75,11 @@ const menuItems: MenuItem[] = [
   }
 ];
 
-
-const SteamAnimation = () => (
-  <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-    {[...Array(3)].map((_, i) => (
-      <motion.div
-        key={i}
-        className="absolute w-1 h-1 bg-white/20 rounded-full"
-        animate={{
-          y: [-10, -30],
-          x: [0, i === 0 ? -10 : i === 2 ? 10 : 0],
-          scale: [0, 1.5, 0],
-          opacity: [0, 0.5, 0],
-        }}
-        transition={{
-          duration: 1.0, // Reduced from 2
-          repeat: Infinity,
-          delay: i * 0.1, // Reduced from 0.3
-          ease: 'easeOut',
-        }}
-      />
-    ))}
-  </div>
-);
-
-const CoffeeRipple = () => (
-  <div className="absolute inset-0 overflow-hidden rounded-full pointer-events-none">
-    {[...Array(3)].map((_, i) => (
-      <motion.div
-        key={i}
-        className="absolute inset-0 border-2 border-[#2c1010] dark:border-white rounded-full"
-        animate={{
-          scale: [1, 2],
-          opacity: [0.3, 0],
-        }}
-        transition={{
-          duration: 1.0, // Reduced from 2
-          repeat: Infinity,
-          delay: i * 0.1, // Reduced from 0.6
-          ease: 'easeOut',
-        }}
-      />
-    ))}
-  </div>
-);
-
-const DropdownMenu = ({ 
-  subItems, 
-  isOpen 
-}: { 
-  subItems: SubMenuItem[]; 
+const DropdownMenu = ({
+  subItems,
+  isOpen
+}: {
+  subItems: SubMenuItem[];
   isOpen: boolean;
 }) => (
   <AnimatePresence>
@@ -135,7 +90,7 @@ const DropdownMenu = ({
         exit={{ opacity: 0, y: -5 }}
         transition={{ duration: 0.11 }} // Faster transition
         className="absolute top-full left-1/2 -translate-x-1/2 w-48 rounded-lg bg-white dark:bg-[#2c1010] border-2 border-[#2c1010] dark:border-white shadow-lg overflow-hidden z-[100] mt-2"
-        style={{ 
+        style={{
           filter: 'drop-shadow(0 4px 8px rgba(0, 0, 0, 0.1))',
           transformOrigin: 'top center'
         }}
@@ -143,7 +98,7 @@ const DropdownMenu = ({
         <ul className="py-1">
           {subItems.map((item) => (
             <li key={item.href}>
-              <Link 
+              <Link
                 href={item.href}
                 prefetch={true} // Enable prefetching for faster navigation
               >
@@ -202,13 +157,13 @@ const Tab = ({
       onMouseLeave={handleMouseLeave}
       className="relative z-[60] cursor-pointer group nav-item"
     >
-      <Link 
+      <Link
         href={item.href}
         prefetch={true} // Enable prefetching
       >
         <div className="px-4 py-2 flex items-center space-x-2 text-sm uppercase text-white mix-blend-difference md:text-base relative">
-          <motion.div 
-            animate={{ rotate: isHovered ? 360 : 0 }} 
+          <motion.div
+            animate={{ rotate: isHovered ? 360 : 0 }}
             transition={{ duration: 0.2 }} // Reduced from 0.5
           >
             {item.icon}
@@ -226,8 +181,8 @@ const Tab = ({
         </div>
       </Link>
       {item.subItems && (
-        <DropdownMenu 
-          subItems={item.subItems} 
+        <DropdownMenu
+          subItems={item.subItems}
           isOpen={isHovered}
         />
       )}
@@ -267,31 +222,23 @@ const Navbar = () => {
 
   return (
     <nav
-      className={`fixed top-9 left-1/2 -translate-x-1/2 w-fit z-50 transition-all duration-200 transform ${
-        isVisible ? 'translate-y-0' : '-translate-y-full'
-      } ${isScrolled ? 'h-16' : 'h-20'}`}
+      className={`fixed top-9 left-1/2 -translate-x-1/2 w-fit z-50 transition-all duration-200 transform ${isVisible ? 'translate-y-0' : '-translate-y-full'} h-20`} // Fixed height
     >
       <div className="h-full relative">
         <ul
           onMouseLeave={() => setPosition((prev) => ({ ...prev, opacity: 0 }))}
-          className={`relative mx-auto flex w-fit rounded-full border-2 border-[#2c1010] dark:border-white bg-white dark:bg-[#2c1010] overflow-visible transition-all duration-200 ${
-            isScrolled ? 'p-1' : 'p-2'
-          }`}
+          className="relative mx-auto flex w-fit rounded-full border-2 border-[#2c1010] dark:border-white bg-white dark:bg-[#2c1010] overflow-visible transition-all duration-200 p-2"
         >
           {menuItems.map((item) => (
-            <Tab 
-              key={item.href} 
-              item={item} 
-              setPosition={setPosition}
-            />
+            <Tab key={item.href} item={item} setPosition={setPosition} />
           ))}
-          <CoffeeRipple />
           <Cursor position={position} />
         </ul>
       </div>
-      
+
       <ModeToggle />
     </nav>
+
   );
 };
 
