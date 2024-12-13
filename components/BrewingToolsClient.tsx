@@ -1,6 +1,8 @@
 'use client';
-import React, { useState } from 'react';
-import { createClient } from '@/utils/supabase/client'; // Adjust import as needed
+import React, { useState, useCallback, useEffect } from 'react';
+import { createClient } from '@/utils/supabase/client'; // Adjust the import path as needed
+import { motion, AnimatePresence } from 'framer-motion';
+
 const supabase = createClient();
 
 interface ToolOption {
@@ -8,7 +10,11 @@ interface ToolOption {
   image: string;
 }
 
-// Example data from "the internet" (manually chosen popular options)
+interface CustomTool {
+  name: string;
+  image: File | null;
+}
+
 const brewerOptions: ToolOption[] = [
   { name: 'Hario V60', image: 'https://guides.filtru.coffee/images/methods/Hario%20V60.png' },
   { name: 'Chemex', image: 'https://img.freepik.com/premium-vector/chemex-coffee-dripper-paper-filter-logo-vector-icon-illustration_7688-3096.jpg' },
@@ -30,170 +36,201 @@ const kettleOptions: ToolOption[] = [
   { name: 'Hario Buono', image: 'https://www.freshroastedcoffee.com/cdn/shop/products/medium_b301588c-cc55-4b16-b740-3a69fd688641_600x600.jpg?v=1703804925' },
 ];
 
-const BrewingToolsSelector = () => {
+const BrewingToolsSelector: React.FC = () => {
   const [selectedBrewers, setSelectedBrewers] = useState<string[]>([]);
   const [selectedGrinders, setSelectedGrinders] = useState<string[]>([]);
   const [selectedKettles, setSelectedKettles] = useState<string[]>([]);
   const [grinderClicks, setGrinderClicks] = useState<number>(0);
 
-  // State for custom brewer
-  const [customBrewerName, setCustomBrewerName] = useState('');
-  const [customBrewerFile, setCustomBrewerFile] = useState<File | null>(null);
+  const [customBrewer, setCustomBrewer] = useState<CustomTool>({ name: '', image: null });
+  const [customGrinder, setCustomGrinder] = useState<CustomTool>({ name: '', image: null });
+  const [customKettle, setCustomKettle] = useState<CustomTool>({ name: '', image: null });
 
-  // State for custom grinder
-  const [customGrinderName, setCustomGrinderName] = useState('');
-  const [customGrinderFile, setCustomGrinderFile] = useState<File | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showSuccessPopup, setShowSuccessPopup] = useState(false);
 
-  // State for custom kettle
-  const [customKettleName, setCustomKettleName] = useState('');
-  const [customKettleFile, setCustomKettleFile] = useState<File | null>(null);
+  useEffect(() => {
+    // Fetch the currently authenticated user
+    supabase.auth.getUser().then(({ data, error }) => {
+      if (error) {
+        console.error('Error fetching user:', error);
+      } else if (data && data.user) {
+        setUserId(data.user.id);
+      }
+    });
+  }, []);
 
-  const handleCheckboxChange = (
-    name: string,
-    selectedArray: string[],
-    setSelectedArray: React.Dispatch<React.SetStateAction<string[]>>
-  ) => {
-    if (selectedArray.includes(name)) {
-      setSelectedArray(selectedArray.filter((item) => item !== name));
-    } else {
-      setSelectedArray([...selectedArray, name]);
-    }
-  };
+  const handleCheckboxChange = useCallback(
+    (
+      name: string,
+      selectedArray: string[],
+      setSelectedArray: React.Dispatch<React.SetStateAction<string[]>>
+    ) => {
+      setSelectedArray((prev) =>
+        prev.includes(name) ? prev.filter((item) => item !== name) : [...prev, name]
+      );
+    },
+    []
+  );
 
-  const uploadImage = async (file: File) => {
+  const uploadImage = async (file: File): Promise<string | null> => {
     const fileName = `${Date.now()}-${file.name}`;
-    const { data, error } = await supabase.storage
-      .from('tool-images')
-      .upload(fileName, file);
+    const { data, error } = await supabase.storage.from('tool-images').upload(fileName, file);
 
     if (error) {
       console.error('Error uploading file:', error);
       return null;
     }
 
-    // Construct a public URL if the bucket is public
-    const {
-      data: { publicUrl },
-    } = supabase.storage.from('tool-images').getPublicUrl(fileName);
-
-    return publicUrl;
+    const { publicUrl } = supabase.storage.from('tool-images').getPublicUrl(fileName).data || {};
+    return publicUrl || null;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    // Upload custom images if provided
-    let customBrewerImageUrl = '';
-    let customGrinderImageUrl = '';
-    let customKettleImageUrl = '';
-
-    if (customBrewerFile) {
-      const url = await uploadImage(customBrewerFile);
-      if (url) customBrewerImageUrl = url;
+    if (!userId) {
+      alert('No user found. Please log in first.');
+      return;
     }
 
-    if (customGrinderFile) {
-      const url = await uploadImage(customGrinderFile);
-      if (url) customGrinderImageUrl = url;
-    }
+    setIsSubmitting(true);
 
-    if (customKettleFile) {
-      const url = await uploadImage(customKettleFile);
-      if (url) customKettleImageUrl = url;
-    }
+    // Upload custom images if files provided
+    const customBrewerImage = customBrewer.image ? await uploadImage(customBrewer.image) : null;
+    const customGrinderImage = customGrinder.image ? await uploadImage(customGrinder.image) : null;
+    const customKettleImage = customKettle.image ? await uploadImage(customKettle.image) : null;
 
     const dataToSend = {
       brewer: {
         selected: selectedBrewers,
-        custom: customBrewerName
-          ? { name: customBrewerName, image: customBrewerImageUrl }
-          : null,
+        custom: customBrewer.name ? { name: customBrewer.name, image: customBrewerImage } : null,
       },
       grinder: {
         models: selectedGrinders,
         max_clicks: grinderClicks,
-        custom: customGrinderName
-          ? { name: customGrinderName, image: customGrinderImageUrl }
-          : null,
+        custom: customGrinder.name ? { name: customGrinder.name, image: customGrinderImage } : null,
       },
       kettle: {
         selected: selectedKettles,
-        custom: customKettleName
-          ? { name: customKettleName, image: customKettleImageUrl }
-          : null,
+        custom: customKettle.name ? { name: customKettle.name, image: customKettleImage } : null,
       },
     };
 
-    console.log('Data to send to Supabase:', dataToSend);
+    console.log('Data to send:', dataToSend);
 
     const { data, error } = await supabase
-      .from('your_table_name')
-      .insert([{ tools: dataToSend }]);
+      .from('profiles')
+      .update({ tools: dataToSend })
+      .eq('id', userId);
 
-    if (error) console.error('Error inserting data:', error);
-    else console.log('Insertion successful:', data);
+    setIsSubmitting(false);
+
+    if (error) {
+      console.error('Error inserting data:', error);
+      alert('Error submitting data.');
+    } else {
+      console.log('Data inserted successfully:', data);
+      setShowSuccessPopup(true);
+    }
   };
 
-  return (
-    <form
-      onSubmit={handleSubmit}
-      className="p-4 space-y-6 max-w-md mx-auto bg-white dark:bg-gray-800 rounded shadow-md"
+  const renderToolOptions = (
+    title: string,
+    options: ToolOption[],
+    selected: string[],
+    setSelected: React.Dispatch<React.SetStateAction<string[]>>,
+    customTool: CustomTool,
+    setCustomTool: React.Dispatch<React.SetStateAction<CustomTool>>
+  ) => (
+    <motion.div
+      layout
+      initial={{ opacity: 0, x: -20 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ type: 'spring', stiffness: 100, damping: 20 }}
+      className="space-y-4"
     >
-      {/* Brewers */}
-      <div>
-        <h2 className="text-lg font-bold mb-2">Select Your Brewer(s):</h2>
-        <div className="grid grid-cols-2 gap-2">
-          {brewerOptions.map((brewer) => (
-            <label key={brewer.name} className="flex items-center space-x-2">
-              <input
-                type="checkbox"
-                checked={selectedBrewers.includes(brewer.name)}
-                onChange={() =>
-                  handleCheckboxChange(brewer.name, selectedBrewers, setSelectedBrewers)
-                }
-              />
-              <img src={brewer.image} alt={brewer.name} className="w-10 h-10" />
-              <span>{brewer.name}</span>
-            </label>
-          ))}
-        </div>
-        {/* Custom Brewer */}
-        <div className="mt-4">
-          <h3 className="font-semibold mb-1">Add a Custom Brewer</h3>
-          <input
-            type="text"
-            placeholder="Custom brewer name"
-            value={customBrewerName}
-            onChange={(e) => setCustomBrewerName(e.target.value)}
-            className="border rounded p-1 w-full mb-2"
-          />
-          <input
-            type="file"
-            onChange={(e) => setCustomBrewerFile(e.target.files?.[0] || null)}
-            className="mb-2"
-          />
-        </div>
+      <h2 className="text-lg font-bold mb-2">{`Select Your ${title}`}</h2>
+      <div className="grid grid-cols-2 gap-2">
+        {options.map((option) => (
+          <label key={option.name} className="flex items-center space-x-2">
+            <input
+              type="checkbox"
+              checked={selected.includes(option.name)}
+              onChange={() => handleCheckboxChange(option.name, selected, setSelected)}
+            />
+            <img src={option.image} alt={option.name} className="w-10 h-10" />
+            <span>{option.name}</span>
+          </label>
+        ))}
       </div>
+      <div className="mt-4">
+        <h3 className="font-semibold mb-1">{`Add a Custom ${title}`}</h3>
+        <input
+          type="text"
+          placeholder={`Custom ${title.toLowerCase()} name`}
+          value={customTool.name}
+          onChange={(e) => setCustomTool((prev) => ({ ...prev, name: e.target.value }))}
+          className="border rounded p-1 w-full mb-2"
+        />
+        Upload Image:
+        <input
+          type="file"
+          onChange={(e) => setCustomTool((prev) => ({ ...prev, image: e.target.files?.[0] || null }))}
+          className="mb-2"
+        />
+      </div>
+    </motion.div>
+  );
 
-      {/* Grinders */}
-      <div>
-        <h2 className="text-lg font-bold mb-2">Select Your Grinder(s):</h2>
-        <div className="grid grid-cols-2 gap-2">
-          {grinderOptions.map((grinder) => (
-            <label key={grinder.name} className="flex items-center space-x-2">
-              <input
-                type="checkbox"
-                checked={selectedGrinders.includes(grinder.name)}
-                onChange={() =>
-                  handleCheckboxChange(grinder.name, selectedGrinders, setSelectedGrinders)
-                }
-              />
-              <img src={grinder.image} alt={grinder.name} className="w-10 h-10" />
-              <span>{grinder.name}</span>
-            </label>
-          ))}
-        </div>
-        <div className="mt-4">
+  if (userId === null) {
+    return <div>Loading user...</div>;
+  }
+
+  return (
+    <motion.div
+      className="relative"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+    >
+      <form
+        onSubmit={handleSubmit}
+        className="space-y-6 p-4 bg-white rounded shadow-md max-w-md mx-auto mt-10"
+      >
+        {renderToolOptions(
+          'Brewer(s)',
+          brewerOptions,
+          selectedBrewers,
+          setSelectedBrewers,
+          customBrewer,
+          setCustomBrewer
+        )}
+        {renderToolOptions(
+          'Grinder(s)',
+          grinderOptions,
+          selectedGrinders,
+          setSelectedGrinders,
+          customGrinder,
+          setCustomGrinder
+        )}
+        {renderToolOptions(
+          'Kettle(s)',
+          kettleOptions,
+          selectedKettles,
+          setSelectedKettles,
+          customKettle,
+          setCustomKettle
+        )}
+
+        {/* Grinder Clicks */}
+        <motion.div
+          layout
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ type: 'spring', stiffness: 100, damping: 20 }}
+          className="mt-4"
+        >
           <label className="flex flex-col">
             <span className="font-semibold">Set Max Grinder Clicks:</span>
             <input
@@ -204,71 +241,50 @@ const BrewingToolsSelector = () => {
               className="border rounded p-1 w-24 mt-1"
             />
           </label>
-        </div>
-        {/* Custom Grinder */}
-        <div className="mt-4">
-          <h3 className="font-semibold mb-1">Add a Custom Grinder</h3>
-          <input
-            type="text"
-            placeholder="Custom grinder name"
-            value={customGrinderName}
-            onChange={(e) => setCustomGrinderName(e.target.value)}
-            className="border rounded p-1 w-full mb-2"
-          />
-          <input
-            type="file"
-            onChange={(e) => setCustomGrinderFile(e.target.files?.[0] || null)}
-            className="mb-2"
-          />
-        </div>
-      </div>
+        </motion.div>
 
-      {/* Kettles */}
-      <div>
-        <h2 className="text-lg font-bold mb-2">Select Your Electric Kettle(s):</h2>
-        <div className="grid grid-cols-2 gap-2">
-          {kettleOptions.map((kettle) => (
-            <label key={kettle.name} className="flex items-center space-x-2">
-              <input
-                type="checkbox"
-                checked={selectedKettles.includes(kettle.name)}
-                onChange={() =>
-                  handleCheckboxChange(kettle.name, selectedKettles, setSelectedKettles)
-                }
-              />
-              <img src={kettle.image} alt={kettle.name} className="w-10 h-10" />
-              <span>{kettle.name}</span>
-            </label>
-          ))}
+        {/* Submit Button */}
+        <div className="text-center">
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors duration-200 disabled:opacity-50"
+          >
+            {isSubmitting ? 'Saving...' : 'Save Preferences'}
+          </button>
         </div>
-        {/* Custom Kettle */}
-        <div className="mt-4">
-          <h3 className="font-semibold mb-1">Add a Custom Kettle</h3>
-          <input
-            type="text"
-            placeholder="Custom kettle name"
-            value={customKettleName}
-            onChange={(e) => setCustomKettleName(e.target.value)}
-            className="border rounded p-1 w-full mb-2"
-          />
-          <input
-            type="file"
-            onChange={(e) => setCustomKettleFile(e.target.files?.[0] || null)}
-            className="mb-2"
-          />
-        </div>
-      </div>
+      </form>
 
-      {/* Submit */}
-      <div className="text-center">
-        <button
-          type="submit"
-          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors duration-200"
-        >
-          Save Preferences
-        </button>
-      </div>
-    </form>
+      {/* Success Popup */}
+      <AnimatePresence>
+        {showSuccessPopup && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9, y: -20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.9, y: -20 }}
+            transition={{ duration: 0.3 }}
+            className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40"
+          >
+            <motion.div
+              className="bg-white rounded p-6 space-y-4"
+              initial={{ scale: 0.9 }}
+              animate={{ scale: 1 }}
+              exit={{ scale: 0.9 }}
+              transition={{ duration: 0.3 }}
+            >
+              <h2 className="text-xl font-bold">Success!</h2>
+              <p>Your preferences have been saved successfully.</p>
+              <button
+                className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+                onClick={() => setShowSuccessPopup(false)}
+              >
+                Close
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
   );
 };
 
