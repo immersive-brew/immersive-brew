@@ -24,7 +24,7 @@ const menuItems: MenuItem[] = [
   {
     label: 'Home',
     href: '/protected',
-    icon: <Home className="h-5 w-5" />
+    icon: <Home className="h-5 w-5" />,
   },
   {
     label: 'Journal',
@@ -36,7 +36,7 @@ const menuItems: MenuItem[] = [
       { label: 'Start Brew', href: '/protected/journal/brew/' },
       { label: 'Compare Entries', href: '/protected/journal/compare' },
       { label: 'Share Entry', href: '/protected/generatelink' },
-    ]
+    ],
   },
   {
     label: 'BrewGuides',
@@ -45,17 +45,7 @@ const menuItems: MenuItem[] = [
     subItems: [
       { label: 'View BrewGuides', href: '/protected/brewguides' },
       { label: 'Create Help Thread', href: '/protected/createhelpthread' },
-    ]
-  },
-  {
-    label: 'Profile',
-    href: '/protected/profile',
-    icon: <User className="h-5 w-5" />,
-    subItems: [
-      { label: 'View Profile', href: '/protected/profile' },
-      { label: 'Water Tracker', href: '/protected/WaterTracker' },
-      { label: 'View Brewing Tools' , href: '/protected/brewingtools' },
-    ]
+    ],
   },
   {
     label: 'CoffeeBeans',
@@ -64,21 +54,122 @@ const menuItems: MenuItem[] = [
     subItems: [
       { label: 'Add Coffee Beans', href: '/protected/coffeebeans' },
       { label: 'Coffee-Wheel', href: '/protected/coffeewheel' },
-    ]
+    ],
   },
   {
     label: 'Espresso',
     href: '/protected/espressojournalpage',
     icon: <Coffee className="h-5 w-5" />,
+    subItems: [{ label: 'View Espresso', href: '/protected/espressojournalpage' }],
+  },
+  {
+    label: 'Profile',
+    href: '/protected/profile',
+    icon: <User className="h-5 w-5" />,
     subItems: [
-      { label: 'View Espresso', href: '/protected/espressojournalpage' },
-    ]
-  }
+      { label: 'View Profile', href: '/protected/profile' },
+      { label: 'Water Tracker', href: '/protected/WaterTracker' },
+      { label: 'View Brewing Tools', href: '/protected/brewingtools' },
+    ],
+  },
 ];
+
+const Navbar = () => {
+  const [position, setPosition] = useState<Position>({ left: 0, width: 0, opacity: 0 });
+  const [isVisible, setIsVisible] = useState(true);
+
+  useEffect(() => {
+    const controlNavbar = () => {
+      const isAtTop = window.scrollY === 0; // Check if the user is at the top of the page
+      setIsVisible(isAtTop);
+    };
+
+    window.addEventListener('scroll', controlNavbar, { passive: true });
+    return () => window.removeEventListener('scroll', controlNavbar);
+  }, []);
+
+  return (
+    <nav
+      className={`fixed top-0 left-1/2 -translate-x-1/2 w-fit z-50 transition-transform duration-75 transform ${isVisible ? 'translate-y-0' : '-translate-y-[200%]'
+        } h-20`}
+    >
+      <div className="relative mx-auto">
+        <ul className="relative flex rounded-full border-2 border-[#2c1010] dark:border-white bg-white dark:bg-[#2c1010] overflow-visible transition-all duration-200 p-2">
+          {menuItems.map((item) => (
+            <Tab key={item.href} item={item} setPosition={setPosition} />
+          ))}
+          <Cursor position={position} />
+        </ul>
+      </div>
+
+      <ModeToggle />
+    </nav>
+  );
+};
+
+const Tab = ({
+  item,
+  setPosition,
+}: {
+  item: MenuItem;
+  setPosition: (position: Position) => void;
+}) => {
+  const ref = useRef<HTMLLIElement>(null);
+  const [isHovered, setIsHovered] = useState(false);
+
+  const handleMouseEnter = () => {
+    setIsHovered(true);
+    if (ref.current) {
+      const { width } = ref.current.getBoundingClientRect();
+      setPosition({ left: ref.current.offsetLeft, width, opacity: 1 });
+    }
+  };
+
+  const handleMouseLeave = () => {
+    setIsHovered(false);
+  };
+
+  return (
+    <li
+      ref={ref}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+      className="relative z-[60] cursor-pointer group nav-item"
+    >
+      <Link href={item.href}>
+        <div className="px-4 py-2 flex items-center space-x-2 text-sm uppercase text-white mix-blend-difference md:text-base relative">
+          <motion.div animate={{ rotate: isHovered ? 360 : 0 }} transition={{ duration: 0.2 }}>
+            {item.icon}
+          </motion.div>
+          <span>{item.label}</span>
+          {item.subItems && (
+            <motion.div
+              animate={{ rotate: isHovered ? 180 : 0 }}
+              transition={{ duration: 0.1 }}
+              className="ml-1"
+            >
+              <ChevronDown className="h-4 w-4" />
+            </motion.div>
+          )}
+        </div>
+      </Link>
+      {item.subItems && <DropdownMenu subItems={item.subItems} isOpen={isHovered} />}
+    </li>
+  );
+};
+
+const Cursor = ({ position }: { position: Position }) => (
+  <motion.li
+    animate={position}
+    transition={{ duration: 0.15 }}
+    className="absolute z-0 h-10 rounded-full transition-all duration-150 ease-in-out"
+    style={{ background: '#2c1010' }}
+  />
+);
 
 const DropdownMenu = ({
   subItems,
-  isOpen
+  isOpen,
 }: {
   subItems: SubMenuItem[];
   isOpen: boolean;
@@ -86,23 +177,16 @@ const DropdownMenu = ({
   <AnimatePresence>
     {isOpen && (
       <motion.div
-        initial={{ opacity: 0, y: -5 }} // Reduced y distance
+        initial={{ opacity: 0, y: -5 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -5 }}
-        transition={{ duration: 0.11 }} // Faster transition
+        transition={{ duration: 0.15 }}
         className="absolute top-full left-1/2 -translate-x-1/2 w-48 rounded-lg bg-white dark:bg-[#2c1010] border-2 border-[#2c1010] dark:border-white shadow-lg overflow-hidden z-[100] mt-2"
-        style={{
-          filter: 'drop-shadow(0 4px 8px rgba(0, 0, 0, 0.1))',
-          transformOrigin: 'top center'
-        }}
       >
         <ul className="py-1">
           {subItems.map((item) => (
             <li key={item.href}>
-              <Link
-                href={item.href}
-                prefetch={true} // Enable prefetching for faster navigation
-              >
+              <Link href={item.href}>
                 <span className="block px-4 py-2 text-sm text-[#2c1010] dark:text-white hover:bg-gray-100 dark:hover:bg-[#3c2020] transition-colors duration-100">
                   {item.label}
                 </span>
@@ -114,133 +198,5 @@ const DropdownMenu = ({
     )}
   </AnimatePresence>
 );
-
-const Tab = ({
-  item,
-  setPosition,
-}: {
-  item: MenuItem;
-  setPosition: (position: Position) => void;
-}) => {
-  const ref = useRef<HTMLLIElement>(null);
-  const [isHovered, setIsHovered] = useState(false);
-  const timeoutRef = useRef<NodeJS.Timeout>();
-
-  const handleMouseEnter = () => {
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-    }
-    setIsHovered(true);
-    if (ref.current) {
-      const { width } = ref.current.getBoundingClientRect();
-      setPosition({ left: ref.current.offsetLeft, width, opacity: 1 });
-    }
-  };
-
-  const handleMouseLeave = () => {
-    timeoutRef.current = setTimeout(() => {
-      setIsHovered(false);
-    }, 50); // Reduced from 100
-  };
-
-  useEffect(() => {
-    return () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
-    };
-  }, []);
-
-  return (
-    <li
-      ref={ref}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
-      className="relative z-[60] cursor-pointer group nav-item"
-    >
-      <Link
-        href={item.href}
-        prefetch={true} // Enable prefetching
-      >
-        <div className="px-4 py-2 flex items-center space-x-2 text-sm uppercase text-white mix-blend-difference md:text-base relative">
-          <motion.div
-            animate={{ rotate: isHovered ? 360 : 0 }}
-            transition={{ duration: 0.2 }} // Reduced from 0.5
-          >
-            {item.icon}
-          </motion.div>
-          <span>{item.label}</span>
-          {item.subItems && (
-            <motion.div
-              animate={{ rotate: isHovered ? 180 : 0 }}
-              transition={{ duration: 0.1 }} // Reduced from 0.3
-              className="ml-1"
-            >
-              <ChevronDown className="h-4 w-4" />
-            </motion.div>
-          )}
-        </div>
-      </Link>
-      {item.subItems && (
-        <DropdownMenu
-          subItems={item.subItems}
-          isOpen={isHovered}
-        />
-      )}
-    </li>
-  );
-};
-
-const Cursor = ({ position }: { position: Position }) => (
-  <motion.li
-    animate={position}
-    transition={{ duration: 0.10 }} // Reduced from 0.2
-    className="absolute z-0 h-10 rounded-full transition-all duration-150 ease-in-out"
-    style={{ background: '#2c1010' }}
-  />
-);
-
-const Navbar = () => {
-  const [position, setPosition] = useState<Position>({ left: 0, width: 0, opacity: 0 });
-  const [isScrolled, setIsScrolled] = useState(false);
-  const [isVisible, setIsVisible] = useState(true);
-  const [lastScrollY, setLastScrollY] = useState(0);
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-
-    const controlNavbar = () => {
-      const currentScrollY = window.scrollY;
-      setIsVisible(currentScrollY < lastScrollY || currentScrollY < 10);
-      setIsScrolled(currentScrollY > 20);
-      setLastScrollY(currentScrollY);
-    };
-
-    // Use passive event listener for better scroll performance
-    window.addEventListener('scroll', controlNavbar, { passive: true });
-    return () => window.removeEventListener('scroll', controlNavbar);
-  }, [lastScrollY]);
-
-  return (
-    <nav
-      className={`fixed top-9 left-1/2 -translate-x-1/2 w-fit z-50 transition-all duration-200 transform ${isVisible ? 'translate-y-0' : '-translate-y-full'} h-20`} // Fixed height
-    >
-      <div className="h-full relative">
-        <ul
-          onMouseLeave={() => setPosition((prev) => ({ ...prev, opacity: 0 }))}
-          className="relative mx-auto flex w-fit rounded-full border-2 border-[#2c1010] dark:border-white bg-white dark:bg-[#2c1010] overflow-visible transition-all duration-200 p-2"
-        >
-          {menuItems.map((item) => (
-            <Tab key={item.href} item={item} setPosition={setPosition} />
-          ))}
-          <Cursor position={position} />
-        </ul>
-      </div>
-
-      <ModeToggle />
-    </nav>
-
-  );
-};
 
 export default Navbar;
