@@ -56,11 +56,6 @@ export default async function BrewGuides() {
         />
       </div>
 
-      {/* Section for Community Brews */}
-      <h2 className="text-xl font-bold mt-10">Community Brews</h2>
-      <Notification />
-      <CardList />
-
       {/* Coffee Drinks Section */}
       <CoffeeHistory coffeeTypes={coffeeTypesData} />
     </div>

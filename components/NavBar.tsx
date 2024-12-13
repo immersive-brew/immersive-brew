@@ -63,7 +63,6 @@ const menuItems: MenuItem[] = [
     subItems: [
       { label: 'Add Coffee Beans', href: '/protected/coffeebeans' },
       { label: 'Coffee-Wheel', href: '/protected/coffeewheel' },
-      { label: 'add your sub menu', href: '/protected/coffeebeans/roasters' }
     ]
   },
   {
@@ -72,8 +71,6 @@ const menuItems: MenuItem[] = [
     icon: <Coffee className="h-5 w-5" />,
     subItems: [
       { label: 'View Espresso', href: '/protected/espressojournalpage' },
-      { label: 'add your sub menu', href: '/protected/espresso/recipes' },
-      { label: 'add your sub menu', href: '/protected/espresso/equipment' }
     ]
   }
 ];
