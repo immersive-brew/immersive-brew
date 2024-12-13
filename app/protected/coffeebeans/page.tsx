@@ -9,7 +9,7 @@ export default async function CoffeeBeansPage() {
   const supabase = createClient();
 
   const {
-    data: { user },
+    data: { user }
   } = await supabase.auth.getUser();
 
   if (!user) {

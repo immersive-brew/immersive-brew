@@ -53,7 +53,8 @@ const menuItems: MenuItem[] = [
     icon: <User className="h-5 w-5" />,
     subItems: [
       { label: 'View Profile', href: '/protected/profile' },
-      { label: 'Water Tracker', href: '/protected/WaterTracker' }
+      { label: 'Water Tracker', href: '/protected/WaterTracker' },
+      { label: 'View Brewing Tools' , href: '/protected/brewingtools' },
     ]
   },
   {
