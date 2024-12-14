@@ -52,34 +52,25 @@ export default async function BrewGuides() {
   const grindGuides = [
     {
       name: "Baratza Encore",
-      description: "Baratza Encore is a 1/2-kettle brewer that produces a rich and smooth cup of coffee. It's easy to use: just add water, brew for 1-2 minutes, and enjoy. It's ideal for medium to fine grind coffee.",
+      description: "Baratza Encore is a full-size electric burr grinder. It's easy to use: just add beans, set to appropriate grindsetting and let it run until it stops.",
       imageUrl: "https://m.media-amazon.com/images/I/51RV+DAkEVL.jpg",
-      tldr: "A compact brewer for rich and smooth coffee.",
+      tldr: "A compact grinder for rich and smooth coffee.",
       videoUrl: "https://www.youtube.com/embed/kRrzStroKzs?si=DXCcyL1UYGglP6eK",
     },
     {
-      name: "Hario V60",
+      name: "Timemore Chestnut C2",
       description:
-        "The Hario V60 is a conical pour-over brewing device that allows for precise control over water flow and extraction. Using a medium-fine grind and a spiral pattern for pouring, it produces a bright, clean, and complex cup of coffee. Ideal brewing time is around 2.5–3 minutes.",
-      imageUrl: "/hario.jpg",
-      tldr: "A versatile pour-over for bright and complex coffee.",
-      videoUrl:"https://www.youtube.com/embed/PUufsQ-nBgQ?si=KlQj5zy63GFaC1OE",
+        "The Timemore Chestnut C2 is a compact grinder with a small footprint. This is a nice budget option for those looking for a compact grinder.",
+      tldr: "A budget powerhouse.",
+      videoUrl:"https://www.youtube.com/embed/I3NaBQavcWQ?si=4KOg6OdBvh-hk4XC",
     },
     {
-      name: "Aeropress",
+      name: "1Zpresso J Manual",
       description:
-        "The Aeropress is a compact, versatile coffee brewing device perfect for making single servings of coffee. It uses air pressure to push water through coffee grounds, resulting in a smooth, rich, and flavorful cup. It's ideal for fine to medium grind coffee and can produce espresso-like shots or a drip-style brew. Brewing time is typically under 2 minutes.",
+        "The 1Zpresso J Manual is a compact device that grinds beans fine enough for use of espresso. This is a nice option for those who want a consistent grind for cheap pairing with an espresso machine.",
       imageUrl: "/aeropress.webp",
-      tldr: "A compact brewer for rich and smooth coffee.",
-      videoUrl: "https://www.youtube.com/embed/97VYBfxn2KI?si=Igw_3fXG3KwkdXJy",
-    },
-    {
-      name: "French Press",
-      description:
-        "The French Press is a classic immersion brewing method that produces a full-bodied and rich cup of coffee. It’s easy to use: just add coarsely ground coffee, pour hot water, steep for 4 minutes, and press the plunger. This method retains more of the coffee's natural oils and flavors for a robust taste.",
-      imageUrl: "/frenchpress.png",
-      tldr: "A simple and classic method for full-bodied coffee.",
-      videoUrl: "https://www.youtube.com/embed/2ziSri3o8Y8?si=dc-gv8sFDS3TbGyy", 
+      tldr: "Espresso-ready for cheap.",
+      videoUrl: "https://www.youtube.com/embed/PtcwZRfkLN0?si=RTtHy7REcH5acp9J",
     },
   ];
 
