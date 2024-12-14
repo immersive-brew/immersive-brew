@@ -53,9 +53,98 @@ const suggestedChanges: Record<string, Array<{
       direction: "down",
       amount: 1,
       reason: "Finer grind to extract more complexity."
+    },
+    {
+      param: "overall_time",
+      direction: "up",
+      amount: 20,
+      reason: "Increase time for more extraction." 
     }
   ],
-  // Add more feedback-based suggestions here...
+  Savoury: [
+    {
+      param: "grind_setting",
+      direction: "down",
+      amount: 1,
+      reason: "Finer grind to extract more complexity."
+    },
+    {
+      param: "overall_time",
+      direction: "up",
+      amount: 20,
+      reason: "Increase time for more extraction."
+    } 
+  ],
+  Powdery: [
+    {
+      param: "grind_setting",
+      direction: "up",
+      amount: 2,
+      reason: "Coarser grind to extract more oils."
+    },
+    {
+      param: "coffee_weight",
+      direction: "down",
+      amount: 30,
+      reason: "Less Coffee for more extraction."
+    }
+  ],
+  Strong: [
+    {
+      param: "coffee_weight", 
+      direction: "down",
+      amount: 30,
+      reason: "Less Coffee, but same amount of time for milder taste."
+    },
+    {
+      param: "water_weight", 
+      direction: "up",
+      amount: 30,
+      reason: "More water to balance out coffee taste."
+    }
+  ],
+  Intense: [
+    {
+      param: "overall_time", 
+      direction: "down",
+      amount: 2,
+      reason: "Go coarser to speed up brew process, aiming for a smoother cup."
+    },
+    {
+      param: "coffee_weight", 
+      direction: "down",
+      amount: 30,
+      reason: "Less coffee to aim for a lighter cup."
+    }
+  ],
+  Heavy: [
+    {
+      param: "grind_setting", 
+      direction: "down",
+      amount: 1,
+      reason: "Less Coffee, but same amount of time for milder taste."
+    },
+    {
+      param: "water_weight", 
+      direction: "up",
+      amount: 50,
+      reason: "More water to balance out coffee taste."
+    }
+  ],
+  Overwhelming: [
+    {
+      param: "grind_setting", 
+      direction: "down",
+      amount: 3,
+      reason: "Less Coffee, but same amount of time for milder taste."
+    },
+    {
+      param: "overall_time", 
+      direction: "down",
+      amount: 30,
+      reason: "Aim for a faster extraction period, to reduce overwhemling taste."
+    }
+  ],
   // 'Pleasant' might have no changes because it's already perfect.
   Pleasant: [],
 };

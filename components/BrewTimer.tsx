@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { motion, useAnimation, useMotionValue, animate } from "framer-motion";
-import { createClient } from "@/utils/supabase/client"; // Importing Supabase client
+import { motion, useAnimation } from "framer-motion";
+import { createClient } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
 
 interface RecipeStep {
@@ -13,119 +13,117 @@ interface RecipeStep {
 }
 
 interface BrewTimerProps {
-  stages: RecipeStep[]; // Receive stages as props
-  recipeId: number;     // Add recipeId to identify the recipe
-  temperature: number;  // Add temperature prop
-  grindSetting: number; // Add grindSetting prop
-  waterAmount: number;  // Add waterAmount prop
-  coffeeAmount: number; // Add coffeeAmount prop
+  stages: RecipeStep[];
+  recipeId: number;
+  temperature: number;
+  grindSetting: number;
+  waterAmount: number;
+  coffeeAmount: number;
 }
 
 const supabase = createClient();
 
-const BrewTimer: React.FC<BrewTimerProps> = ({ stages, recipeId, temperature, grindSetting, waterAmount, coffeeAmount }) => {
+const BrewTimer: React.FC<BrewTimerProps> = ({
+  stages,
+  recipeId,
+  temperature,
+  grindSetting,
+  waterAmount,
+  coffeeAmount,
+}) => {
+  const router = useRouter();
+
+  // User state
+  const [user, setUser] = useState<any>(null);
+  const [userLoading, setUserLoading] = useState(true);
+
+  // Timer states
   const [currentStage, setCurrentStage] = useState(0);
   const [timeLeft, setTimeLeft] = useState(stages[0].duration);
   const [isActive, setIsActive] = useState(false);
   const [overallTime, setOverallTime] = useState(0);
   const [isFinished, setIsFinished] = useState(false);
 
-  const router = useRouter();
+  // Animations
+  const outlineControls = useAnimation();
+  const coffeeFillControls = useAnimation();
 
-  const r = 80; // Radius of the circle
+  const r = 80;
   const circumference = 2 * Math.PI * r;
-
   const circleCenterX = 100;
   const circleCenterY = 100;
-  const circleTopY = circleCenterY - r; // 20
-  const circleBottomY = circleCenterY + r; // 180
-  const circleHeight = circleBottomY - circleTopY; // 160
 
-  // Controls for animations
-  const fillControls = useAnimation();
-  const outlineControls = useAnimation();
-  const fillColor = useMotionValue("#00bfff"); // Start with blue color
+  // Fetch user before anything
+  useEffect(() => {
+    const fetchUser = async () => {
+      const {
+        data: { user },
+        error,
+      } = await supabase.auth.getUser();
+      if (error) {
+        console.error("Error fetching user:", error.message);
+      } else {
+        setUser(user);
+      }
+      setUserLoading(false);
+    };
+    fetchUser();
+  }, []);
 
+  // Timer logic
   useEffect(() => {
     let timer: NodeJS.Timeout;
-
     if (isActive) {
       timer = setInterval(() => {
         setOverallTime((prev) => prev + 1);
-
         if (timeLeft > 0) {
           setTimeLeft((prev) => prev - 1);
-        } else if (currentStage < stages.length - 1) {
-          // Move to the next stage
-          setCurrentStage((prevStage) => prevStage + 1);
-          setTimeLeft(stages[currentStage + 1].duration);
         } else {
-          // Continue counting overallTime even after last stage
-          setTimeLeft(0);
+          // Move to next stage or end
+          if (currentStage < stages.length - 1) {
+            const next = currentStage + 1;
+            setCurrentStage(next);
+            setTimeLeft(stages[next].duration);
+          } else {
+            // After last stage, just keep overall time running if needed
+            setTimeLeft(0);
+          }
         }
       }, 1000);
     }
-
     return () => clearInterval(timer);
   }, [isActive, timeLeft, currentStage, stages]);
 
+  // Animate the circle outline each second
   useEffect(() => {
     if (isActive) {
-      // Animate the fill during the first stage
-      if (currentStage === 0) {
-        fillControls.start({
-          y: circleTopY,
-          transition: {
-            duration: stages[0].duration,
-            ease: "linear",
-          },
-        });
-
-        // Animate fill color interpolation over time
-        animateColorInterpolation(stages[0].duration);
-      }
-      // Animate the outline for each stage
+      const fraction = timeLeft / stages[currentStage].duration;
       outlineControls.start({
-        strokeDashoffset:
-          circumference * (1 - timeLeft / stages[currentStage].duration),
-        transition: {
-          duration: 1,
-          ease: "linear",
-        },
+        strokeDashoffset: circumference * (1 - fraction),
+        transition: { duration: 0.5, ease: "linear" },
       });
     } else {
-      // Reset animations when not active
-      fillControls.set({ y: circleBottomY });
-      outlineControls.set({ strokeDashoffset: 0 });
-      fillColor.set("#00bfff"); // Reset fill color to start color
+      // Reset when not active
+      outlineControls.set({ strokeDashoffset: circumference });
     }
-  }, [
-    isActive,
-    timeLeft,
-    currentStage,
-    stages,
-    fillControls,
-    outlineControls,
-    circumference,
-    fillColor,
-    circleTopY,
-    circleBottomY,
-  ]);
+  }, [isActive, timeLeft, currentStage, stages, outlineControls, circumference]);
 
-  const animateColorInterpolation = (duration: number) => {
-    const startColor = "#00bfff"; // Blue
-    const endColor = "#6F4E37"; // Coffee brown
-
-    animate(0, 1, {
-      duration: duration,
-      ease: "linear",
-      onUpdate: (latest) => {
-        fillColor.set(interpolateColor(startColor, endColor, latest));
-      },
-    });
-  };
+  // Animate the coffee fill only during the first stage
+  useEffect(() => {
+    if (isActive && currentStage === 0) {
+      // Scale from 0 to 1 over the duration of the first stage
+      coffeeFillControls.start({
+        scaleY: 1,
+        transition: { duration: stages[0].duration, ease: "easeInOut" },
+      });
+    } else if (!isActive || currentStage !== 0) {
+      // Reset if not active or after moving past first stage
+      coffeeFillControls.set({ scaleY: 0 });
+    }
+  }, [isActive, currentStage, coffeeFillControls, stages]);
 
   const startTimer = () => {
+    if (!user) return; // Ensure user is loaded before starting
     setIsActive(true);
   };
 
@@ -135,28 +133,31 @@ const BrewTimer: React.FC<BrewTimerProps> = ({ stages, recipeId, temperature, gr
     setCurrentStage(0);
     setTimeLeft(stages[0].duration);
     setOverallTime(0);
-    fillControls.set({ y: circleBottomY });
-    outlineControls.set({ strokeDashoffset: 0 });
-    fillColor.set("#00bfff"); // Reset fill color to start color
+    coffeeFillControls.set({ scaleY: 0 });
+    outlineControls.set({ strokeDashoffset: circumference });
   };
 
   const finishBrew = async () => {
     setIsActive(false);
     setIsFinished(true);
 
-    // Prepare data to insert into Supabase
+    if (!user) {
+      alert("User not found. Please log in.");
+      return;
+    }
+
     const entryData = {
       recipeid: recipeId,
       overall_time: overallTime,
-      temperature: temperature,
+      temperature,
       grind_setting: grindSetting,
       water_weight: waterAmount,
       coffee_weight: coffeeAmount,
+      userid: user.id, // Include user id
     };
 
     try {
-      const { data, error } = await supabase.from("entries").insert([entryData]);
-
+      const { error } = await supabase.from("entries").insert([entryData]);
       if (error) {
         console.error("Error inserting data:", error);
         alert("An error occurred while saving your brew data.");
@@ -170,37 +171,40 @@ const BrewTimer: React.FC<BrewTimerProps> = ({ stages, recipeId, temperature, gr
     }
   };
 
-  // Helper function to format seconds into MM:SS
   const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60)
-      .toString()
-      .padStart(2, "0");
-    const secs = (seconds % 60)
-      .toString()
-      .padStart(2, "0");
+    const mins = Math.floor(seconds / 60).toString().padStart(2, "0");
+    const secs = (seconds % 60).toString().padStart(2, "0");
     return `${mins}:${secs}`;
   };
 
-  // Display the next stage and its duration if it exists
   const nextStage =
     currentStage < stages.length - 1 ? stages[currentStage + 1] : null;
 
+  // If user loading, show loading state
+  if (userLoading) {
+    return <div className="p-6">Loading user data...</div>;
+  }
+
+  // If no user, show error or ask to log in
+  if (!user) {
+    return <div className="p-6">No user found. Please log in.</div>;
+  }
+
   return (
-    <div className="p-6 border rounded-lg shadow-md max-w-md mx-auto bg-white">
+    <div className="p-6 border rounded-lg shadow-md max-w-md mx-auto bg-white flex flex-col items-center">
       <h2 className="text-2xl font-semibold text-center text-gray-800">
         Brew Timer
       </h2>
 
-      <div className="mt-6 space-y-6">
+      <div className="mt-6 space-y-6 flex flex-col items-center">
         {/* Current Stage */}
         <div className="text-center">
           <p className="text-lg text-gray-700">
-            <strong>Current Stage:</strong>{" "}
-            {stages[currentStage].description}
+            <strong>Current Stage:</strong> {stages[currentStage].description}
           </p>
         </div>
 
-        {/* Next Stage (if applicable) */}
+        {/* Next Stage */}
         {nextStage && (
           <div className="text-center">
             <p className="text-lg text-gray-600">
@@ -217,69 +221,71 @@ const BrewTimer: React.FC<BrewTimerProps> = ({ stages, recipeId, temperature, gr
           </p>
         </div>
 
-        {/* SVG Timer */}
-        <div className="flex justify-center">
-          <svg width="200" height="200" viewBox="0 0 200 200">
-            <defs>
-              {/* Clip Path for Water Filling Effect */}
-              <clipPath id="clip-circle">
-                <circle cx={circleCenterX} cy={circleCenterY} r={r} />
-              </clipPath>
-            </defs>
-
-            {/* Background Circle */}
-            <circle
-              cx={circleCenterX}
-              cy={circleCenterY}
-              r={r}
-              stroke="lightgray"
-              strokeWidth="5"
-              fill="none"
-            />
-
-            {/* Water Fill Animation (First Stage Only) */}
-            {currentStage === 0 && (
-              <motion.rect
-                x={circleCenterX - r}
-                y={circleBottomY}
-                width={r * 2}
-                height={circleHeight}
-                clipPath="url(#clip-circle)"
-                animate={fillControls}
-                initial={{ y: circleBottomY }}
-                style={{ fill: fillColor }}
+        {/* Display coffee cup and timer side by side */}
+        <div className="flex flex-row items-center justify-center gap-8">
+          {/* Coffee Cup */}
+          <div className="relative w-40 h-40">
+            <svg viewBox="0 0 100 100" className="w-full h-full">
+              {/* Cup Outline */}
+              <path
+                d="M20 30 Q20 20 30 20 H70 Q80 20 80 30 V65 Q80 75 70 75 H30 Q20 75 20 65 Z"
+                fill="none"
+                stroke="#333"
+                strokeWidth="2"
               />
-            )}
+              {/* Coffee Fill */}
+              <motion.rect
+                x="21"
+                y="65"
+                width="58"
+                height="45"
+                style={{ originY: "100%", fill: "#6F4E37" }}
+                animate={coffeeFillControls}
+                initial={{ scaleY: 0 }}
+              />
+            </svg>
+          </div>
 
-            {/* Outline Circle */}
-            <motion.circle
-              cx={circleCenterX}
-              cy={circleCenterY}
-              r={r}
-              stroke="#000000" // Black outline
-              strokeWidth="5"
-              fill="none"
-              strokeDasharray={circumference}
-              initial={{ strokeDashoffset: circumference }}
-              animate={outlineControls}
-            />
+          {/* Circular Timer */}
+          <div className="flex justify-center">
+            <svg width="200" height="200" viewBox="0 0 200 200">
+              <circle
+                cx={circleCenterX}
+                cy={circleCenterY}
+                r={r}
+                stroke="lightgray"
+                strokeWidth="5"
+                fill="none"
+              />
 
-            {/* Text Inside the Circle */}
-            <text
-              x={circleCenterX}
-              y={circleCenterY + 5}
-              textAnchor="middle"
-              fontSize="32"
-              fill="#333"
-              dominantBaseline="middle"
-            >
-              {formatTime(timeLeft)}
-            </text>
-          </svg>
+              <motion.circle
+                cx={circleCenterX}
+                cy={circleCenterY}
+                r={r}
+                stroke="#000"
+                strokeWidth="5"
+                fill="none"
+                strokeDasharray={circumference}
+                initial={{ strokeDashoffset: circumference }}
+                animate={outlineControls}
+              />
+
+              <text
+                x={circleCenterX}
+                y={circleCenterY + 5}
+                textAnchor="middle"
+                fontSize="32"
+                fill="#333"
+                dominantBaseline="middle"
+              >
+                {formatTime(timeLeft)}
+              </text>
+            </svg>
+          </div>
         </div>
 
-        {/* Control Buttons */}
-        <div className="flex flex-col items-center gap-4">
+        {/* Buttons */}
+        <div className="flex flex-col items-center gap-4 w-full">
           {!isActive && !isFinished && (
             <button
               onClick={startTimer}
@@ -310,35 +316,6 @@ const BrewTimer: React.FC<BrewTimerProps> = ({ stages, recipeId, temperature, gr
       </div>
     </div>
   );
-};
-
-// Helper function to interpolate colors
-const interpolateColor = (
-  startColor: string,
-  endColor: string,
-  factor: number
-): string => {
-  const hex = (x: number) => {
-    const hexVal = Math.round(x).toString(16);
-    return hexVal.length === 1 ? "0" + hexVal : hexVal;
-  };
-
-  const start = {
-    r: parseInt(startColor.slice(1, 3), 16),
-    g: parseInt(startColor.slice(3, 5), 16),
-    b: parseInt(startColor.slice(5, 7), 16),
-  };
-  const end = {
-    r: parseInt(endColor.slice(1, 3), 16),
-    g: parseInt(endColor.slice(3, 5), 16),
-    b: parseInt(endColor.slice(5, 7), 16),
-  };
-
-  const r = start.r + factor * (end.r - start.r);
-  const g = start.g + factor * (end.g - start.g);
-  const b = start.b + factor * (end.b - start.b);
-
-  return `#${hex(r)}${hex(g)}${hex(b)}`;
 };
 
 export default BrewTimer;
