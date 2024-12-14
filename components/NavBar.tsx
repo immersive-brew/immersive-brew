@@ -43,6 +43,7 @@ const menuItems: MenuItem[] = [
     icon: <Coffee className="h-5 w-5" />,
     subItems: [
       { label: 'Create Help Thread', href: '/protected/createhelpthread' },
+      { label: 'Find Local Roasters', href: '/protected/googleplaces' },
     ],
   },
   {
