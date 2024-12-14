@@ -35,6 +35,7 @@ const menuItems: MenuItem[] = [
       { label: 'Start Brew', href: '/protected/journal/brew/' },
       { label: 'Compare Entries', href: '/protected/journal/compare' },
       { label: 'Share Entry', href: '/protected/generatelink' },
+      { label: 'Create Recipe', href: '/protected/recipe' },
     ],
   },
   {
