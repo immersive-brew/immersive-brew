@@ -24,6 +24,7 @@ const HelpThreadClient = ({ initialThreads }: HelpThreadClientProps) => {
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [currentUser, setCurrentUser] = useState<any>(null); // State to store the current user
+  const [modalOpen, setModalOpen] = useState(false); // State to control modal open/close
 
   // Fetch the current user when the component mounts
   useEffect(() => {
@@ -42,16 +43,10 @@ const HelpThreadClient = ({ initialThreads }: HelpThreadClientProps) => {
     fetchUser();
   }, []);
 
-  // Fetch and sort threads whenever initialThreads or currentUser changes
+  // Fetch and sort threads whenever currentUser changes
   useEffect(() => {
     const fetchThreads = async () => {
       let query = supabase.from('threads').select('*').order('created_at', { ascending: false });
-
-      // If you need to filter based on the current user, you can modify the query here
-      // For example, fetching only threads created by the current user:
-      // if (currentUser) {
-      //   query = query.eq('user_id', currentUser.id);
-      // }
 
       const { data, error } = await query;
 
@@ -95,6 +90,8 @@ const HelpThreadClient = ({ initialThreads }: HelpThreadClientProps) => {
           setThreads([data[0] as Thread, ...threads]);
           setNewThread('');
           console.log('Created new thread:', data[0]);
+          // Close modal after creation
+          setModalOpen(false);
         }
       } catch (error) {
         console.error('Unexpected error:', error);
@@ -174,43 +171,73 @@ const HelpThreadClient = ({ initialThreads }: HelpThreadClientProps) => {
 
       {errorMessage && <p className="text-red-500 mb-4">{errorMessage}</p>}
 
-      {/* Show the thread creation form only if the user is logged in */}
+      {/* Show the "Create Thread" button only if the user is logged in */}
       {currentUser ? (
-        <form onSubmit={createThread} className="mb-4">
-          {/* Create new thread */}
-          <input
-            type="text"
-            placeholder="Create a new help thread"
-            className="border border-gray-300 p-2 rounded w-full mb-2"
-            value={newThread}
-            onChange={(e) => setNewThread(e.target.value)}
-            disabled={loading}
-          />
-          <button
-            type="submit"
-            className={`bg-blue-500 text-white px-4 py-2 rounded ${
-              loading ? 'opacity-50 cursor-not-allowed' : 'hover:bg-blue-600'
-            }`}
-            disabled={loading}
-          >
-            {loading ? 'Creating...' : 'Create Thread'}
-          </button>
-        </form>
+        <button
+          onClick={() => setModalOpen(true)}
+          className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 mb-4"
+        >
+          Create Thread
+        </button>
       ) : (
         <p className="mb-4">Please log in to create a thread.</p>
       )}
 
-      <div className="space-y-4">
-        {/* Map all threads */}
+      {/* Modal for creating a new thread */}
+      {modalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
+          <div className="bg-white p-6 rounded shadow-lg max-w-md w-full">
+            <h2 className="text-xl font-semibold mb-4">Create a New Help Thread</h2>
+            <form onSubmit={createThread}>
+              <input
+                type="text"
+                placeholder="Enter your thread content..."
+                className="border border-gray-300 p-2 rounded w-full mb-2"
+                value={newThread}
+                onChange={(e) => setNewThread(e.target.value)}
+                disabled={loading}
+              />
+              <div className="flex justify-end space-x-2">
+                <button
+                  type="button"
+                  onClick={() => setModalOpen(false)}
+                  className="bg-gray-300 text-black px-4 py-2 rounded hover:bg-gray-400"
+                  disabled={loading}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className={`bg-blue-500 text-white px-4 py-2 rounded ${
+                    loading ? 'opacity-50 cursor-not-allowed' : 'hover:bg-blue-600'
+                  }`}
+                  disabled={loading}
+                >
+                  {loading ? 'Creating...' : 'Create'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Display threads in a grid layout */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {threads.map((thread) => (
-          <div key={thread.id} className="border border-brown-700 bg-gray-50 p-4 rounded">
-            <h2 className="text-xl font-semibold">{thread.contents}</h2>
+          <div
+            key={thread.id}
+            className="border border-gray-300 bg-white p-4 rounded shadow-sm"
+          >
+            <h2 className="text-lg font-semibold mb-2">{thread.contents}</h2>
+            <p className="text-sm text-gray-500 mb-2">
+              Posted by {thread.user_id} on {new Date(thread.created_at).toLocaleString()}
+            </p>
 
             {/* Show delete button only if the current user is the thread creator */}
             {currentUser?.id === thread.user_id && (
               <button
                 onClick={() => deleteThread(thread.id)}
-                className="bg-red-500 text-white px-4 py-2 rounded mt-2 hover:bg-red-600"
+                className="bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600 text-sm mb-2"
               >
                 Delete Thread
               </button>
@@ -219,15 +246,15 @@ const HelpThreadClient = ({ initialThreads }: HelpThreadClientProps) => {
             <ReplySection threadId={thread.id} addReply={addReply} />
 
             <div className="mt-4">
-              <h3 className="font-semibold">Replies:</h3>
+              <h3 className="font-semibold mb-1">Replies:</h3>
               {thread.replys.length > 0 ? (
-                <ul className="list-disc ml-6">
+                <ul className="list-disc ml-6 space-y-1">
                   {thread.replys.map((reply, index) => (
-                    <li key={index}>{reply}</li>
+                    <li key={index} className="text-sm">{reply}</li>
                   ))}
                 </ul>
               ) : (
-                <p>No replies yet.</p>
+                <p className="text-sm text-gray-500">No replies yet.</p>
               )}
             </div>
           </div>
@@ -270,21 +297,21 @@ const ReplySection = ({
       <input
         type="text"
         placeholder="Write a reply..."
-        className="border border-gray-300 p-2 rounded w-full"
+        className="border border-gray-300 p-2 rounded w-full text-sm"
         value={reply}
         onChange={(e) => setReply(e.target.value)}
         disabled={loading}
       />
       <button
         type="submit"
-        className={`bg-green-500 text-white px-4 py-2 rounded mt-2 ${
+        className={`bg-green-500 text-white px-3 py-1 rounded mt-1 text-sm ${
           loading ? 'opacity-50 cursor-not-allowed' : 'hover:bg-green-600'
         }`}
         disabled={loading}
       >
         {loading ? 'Replying...' : 'Reply'}
       </button>
-      {error && <p className="text-red-500 mt-2">{error}</p>}
+      {error && <p className="text-red-500 mt-2 text-sm">{error}</p>}
     </form>
   );
 };
