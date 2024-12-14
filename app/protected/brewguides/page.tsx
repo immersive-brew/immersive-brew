@@ -32,9 +32,28 @@ export default async function BrewGuides() {
       name: "Americano",
       description:
         "An Americano is made by adding hot water to a shot of espresso, giving it a similar strength to drip coffee but with a different flavor profile. The result is a smooth, rich cup that’s less intense than a traditional espresso shot.",
-      imageUrl: "/images/americano.png",
+      imageUrl: "https://www.mysticmonkcoffee.com/cdn/shop/articles/americano_coffee_1024x.png?v=1706611607",
     },
-    // Add more coffee types as needed
+    {
+      name: "Cappuccino",
+      description: "A cappuccino is a coffee drink made by adding steamed milk to espresso, creating a creamy and balanced cup of coffee with a smooth texture and a rich, aromatic flavor.",
+      imageUrl: "https://www.thespruceeats.com/thmb/oUxhx54zsjVWfPlrgedJU0MZ-y0=/1500x0/filters:no_upscale():max_bytes(150000):strip_icc()/how-to-make-cappuccinos-766116-hero-01-a754d567739b4ee0b209305138ecb996.jpg",
+    },
+    {
+      name: "Latte",
+      description: "A latte is a coffee drink made by adding steamed milk to espresso, creating a creamy and balanced cup of coffee with a smooth texture and a rich, aromatic flavor.",
+      imageUrl: "https://www.foodandwine.com/thmb/CCe2JUHfjCQ44L0YTbCu97ukUzA=/1500x0/filters:no_upscale():max_bytes(150000):strip_icc()/Partners-Latte-FT-BLOG0523-09569880de524fe487831d95184495cc.jpg",
+    },
+    {
+      name: "Mocha",
+      description: "A mocha is a coffee drink made by adding chocolate syrup to espresso, creating a creamy and rich cup of coffee with a smooth texture and a complex flavor profile.",
+      imageUrl: "https://athome.starbucks.com/sites/default/files/styles/recipe_banner_xlarge/public/2024-05/CaffeMocha_RecipeHeader_848x539_%402x.jpg.webp?itok=ov3gQo8W",
+    },
+    {
+      name: "Flat White",
+      description: "A flat white is a coffee drink made by adding steamed milk to espresso, creating a creamy and balanced cup of coffee with a smooth texture and a rich, aromatic flavor.",
+      imageUrl: "https://methodicalcoffee.com/cdn/shop/articles/Flat_white_sitting_on_a_table.jpg?v=1695740372",
+    }
   ];
 
   return (
