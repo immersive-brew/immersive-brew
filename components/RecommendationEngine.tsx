@@ -277,39 +277,6 @@ const RecommendationEngine = () => {
                         )
                     )}
                 </AnimatePresence>
-
-                <motion.button
-                    onClick={testCors}
-                    variants={secondaryButtonVariants}
-                    initial="initial"
-                    whileHover="hover"
-                    whileTap="tap"
-                    className="w-full bg-green-500 text-white py-2 rounded-lg mt-4 font-semibold shadow-md focus:outline-none flex items-center justify-center"
-                >
-                    {loading ? (
-                        <>
-                            Testing CORS...
-                            <Spinner />
-                        </>
-                    ) : (
-                        "Test CORS"
-                    )}
-                </motion.button>
-
-                {/* Display CORS Test Result */}
-                <AnimatePresence>
-                    {corsTestResult && (
-                        <motion.div
-                            className="mt-4 p-4 bg-gray-200 rounded-lg shadow"
-                            initial={{ opacity: 0, y: -10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -10 }}
-                            transition={{ duration: 0.3 }}
-                        >
-                            <p>{corsTestResult}</p>
-                        </motion.div>
-                    )}
-                </AnimatePresence>
             </motion.div>
         </motion.div>
         );

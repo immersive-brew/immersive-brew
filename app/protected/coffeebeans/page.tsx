@@ -1,7 +1,6 @@
 import { createClient } from '@/utils/supabase/server';
 import { redirect } from 'next/navigation';
-
-import AuthButton from '@/components/AuthButton';
+import RecommendationEngine from '@/components/RecommendationEngine';
 import CoffeeBeansClient from '@/components/CoffeeBeansClient';
 
 
@@ -18,6 +17,7 @@ export default async function CoffeeBeansPage() {
 
   return (
     <div className="w-full flex flex-col items-center">
+      <RecommendationEngine />
       <CoffeeBeansClient userid={user.id} />
     </div>
   );

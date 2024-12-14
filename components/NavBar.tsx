@@ -53,6 +53,7 @@ const menuItems: MenuItem[] = [
     subItems: [
       { label: 'Add Coffee Beans', href: '/protected/coffeebeans' },
       { label: 'Coffee-Wheel', href: '/protected/coffeewheel' },
+      { label: 'Blind Taste Test', href: '/protected/blindtest' },
     ],
   },
   {
