@@ -56,6 +56,34 @@ export default async function BrewGuides() {
     }
   ];
 
+  const coffeeBeansData = [
+    {
+      name: "Arabica",
+      description: "Arabica is a type of coffee bean that is grown in the Arabica region of Central America. It is the most common type of coffee bean in the world and is used to make coffee.",
+      imageUrl: "https://www.foodandwine.com/thmb/XbKXqQvF61Csj9XLs_Nj3xwlwEI=/1500x0/filters:no_upscale():max_bytes(150000):strip_icc()/Everything-You-Need-To-Know-About-Arabica-Coffee-FT-BLOG0822-2000-127d1551916e45138ea373de75f08138.jpg",
+    },
+    {
+      name: "Robusta",
+      description: "Robusta is a type of coffee bean that is grown in the Robusta region of Central America. It is the second most common type of coffee bean in the world and is used to make coffee.",
+      imageUrl: "https://espresso-works.com/cdn/shop/articles/espresso-works-blog-coffee-101-robusta-coffee-1_1081x.jpg?v=1681280369",
+    },
+    {
+      name: "Liberica",
+      description: "Liberica is a type of coffee bean that is grown in the Liberica region of Central America. It is a rare and exotic type of coffee bean and is used to make coffee.",
+      imageUrl: "https://www.siamhillscoffee.com/wp-content/uploads/What-is-Liberica-Coffee-%E2%80%93-The-Worlds-Rarest-Coffee-Type-%E2%80%93-2-1-1030x687.jpg",
+    },
+    {
+      name: "Catharina",
+      description: "Catharina is a type of coffee bean that is grown in the Catharina region of Central America. It is a rare and exotic type of coffee bean and is used to make coffee.",
+      imageUrl: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQw6vJ7MzqfHA9WLOG_kws-RlTCb8B3v2-IGA&s",
+    },
+    {
+      name: "Excelsa",
+      description: "Excelsa is a type of coffee bean that is grown in the Excelsa region of Central America. It is a rare and exotic type of coffee bean and is used to make coffee.",
+      imageUrl: "https://bakedbrewedbeautiful.com/wp-content/uploads/2020/08/DSC0258-scaled.jpg",
+    }
+  ];
+
   return (
     <div className="container mx-auto px-4">
       {/* Main Heading */}
@@ -76,7 +104,10 @@ export default async function BrewGuides() {
       </div>
 
       {/* Coffee Drinks Section */}
-      <CoffeeHistory coffeeTypes={coffeeTypesData} />
+      <CoffeeHistory coffeeTypes={coffeeTypesData} title="Types of Coffee Drinks" />
+
+      {/* Coffee Beans Section */}
+      <CoffeeHistory coffeeTypes={coffeeBeansData} title="Types of Coffee Beans" />
     </div>
   );
 }
