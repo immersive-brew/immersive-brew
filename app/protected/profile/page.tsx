@@ -37,12 +37,6 @@ export default async function Page() {
       <p className="text-center text-gray-600 mb-6">
         Would you like to change your name?
       </p>
-      <h2 className="text-2xl font-semibold mb-4 text-center">
-        Your current name: <span className="font-bold">{profile?.full_name}</span>
-      </h2>
-      <p className="text-center text-gray-600 mb-6">
-        Would you like to change your name?
-      </p>
 
       {/* Profile Form */}
       <div className="flex flex-col items-center">
