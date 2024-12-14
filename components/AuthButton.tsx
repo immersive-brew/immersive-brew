@@ -10,7 +10,17 @@ export default async function AuthButton() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const name = user ? user.user_metadata.full_name : null;
+  let name = null;
+
+  if (user) {
+    const { data } = await supabase
+      .from("profiles")
+      .select()
+      .eq("id", user.id)
+      .single();
+
+    name = data.full_name;
+  }
 
 
 
