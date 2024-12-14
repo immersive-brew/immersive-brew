@@ -44,6 +44,7 @@ const menuItems: MenuItem[] = [
     subItems: [
       { label: 'Create Help Thread', href: '/protected/createhelpthread' },
       { label: 'Find Local Roasters', href: '/protected/googleplaces' },
+      { label: 'Community BTM', href: '/protected/displaycommunity' },
     ],
   },
   {
