@@ -231,7 +231,10 @@ const grinderTypes = {
   'Manual': { min: 1, max: 15 },
 };
 
-const CoffeeBeansModal: React.FC<{ onClose: (data?: any) => void }> = ({ onClose }) => {
+const CoffeeBeansModal: React.FC<{ onClose: (data?: any, file?: File | null) => void }> = ({
+  onClose,
+}) => {
+  // State variables for form data
   const [coffeeName, setCoffeeName] = useState('');
   const [roasterName, setRoasterName] = useState('');
   const [roastDate, setRoastDate] = useState('');
@@ -251,18 +254,20 @@ const CoffeeBeansModal: React.FC<{ onClose: (data?: any) => void }> = ({ onClose
   const [grinderType, setGrinderType] = useState('Electrical');
   const [grindSize, setGrindSize] = useState('Medium');
   const [grinderSetting, setGrinderSetting] = useState(10);
+  const [beanImage, setBeanImage] = useState<File | null>(null);
 
-  // Toggles for sections
+  // Toggles for collapsible sections
   const [methodNotesOpen, setMethodNotesOpen] = useState(false);
   const [producerOriginOpen, setProducerOriginOpen] = useState(false);
   const [grinderSettingOpen, setGrinderSettingOpen] = useState(false);
 
+  // Reset region when country changes
   useEffect(() => {
     setRegion('');
   }, [country]);
 
   const handleSave = () => {
-    if (!coffeeName || !roasterName || !roastDate || !roastLevel || !bagWeight) {
+    if (!coffeeName || !roasterName || !roastDate || !roastLevel) {
       alert('Please fill out all required fields');
       return;
     }
@@ -289,16 +294,15 @@ const CoffeeBeansModal: React.FC<{ onClose: (data?: any) => void }> = ({ onClose
       grinderSetting: Number(grinderSetting),
     };
 
-    onClose(beansData);
+    onClose(beansData, beanImage);
   };
-  
 
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-70 overflow-y-auto">
       <div className="bg-[#E6D5B8] p-8 rounded-lg relative w-full max-w-2xl m-4">
         <button
           onClick={() => onClose()}
-          className="absolute top-2 right-2 p-2 text-[#9C6644]"
+          className="absolute top-2 right-2 p-2 text-[#9C6644] hover:text-[#7F5539] transition-colors"
         >
           ✕
         </button>
@@ -306,6 +310,7 @@ const CoffeeBeansModal: React.FC<{ onClose: (data?: any) => void }> = ({ onClose
         <h2 className="text-2xl font-bold mb-6 text-center text-[#4A2C2A]">Add Coffee Beans</h2>
 
         <div className="space-y-5">
+          {/* Coffee Name and Roaster */}
           <input
             type="text"
             value={coffeeName}
@@ -313,7 +318,7 @@ const CoffeeBeansModal: React.FC<{ onClose: (data?: any) => void }> = ({ onClose
             className="w-full p-3 bg-white border border-[#C7A17A] rounded text-[#4A2C2A] text-lg"
             placeholder="Coffee Name"
           />
-          
+
           <input
             type="text"
             value={roasterName}
@@ -322,259 +327,106 @@ const CoffeeBeansModal: React.FC<{ onClose: (data?: any) => void }> = ({ onClose
             placeholder="Roaster Name"
           />
 
+          {/* Roast Date and Level */}
           <div className="flex space-x-4">
-            <div className="flex-1">
-              <input
-                type="date"
-                value={roastDate}
-                onChange={(e) => setRoastDate(e.target.value)}
-                className="w-full p-3 bg-white border border-[#C7A17A] rounded text-[#4A2C2A] text-lg"
-              />
-            </div>
-            <div className="flex-1">
-              <label className="block text-[#4A2C2A] text-sm font-bold mb-2" htmlFor="roastLevel">
-                Roast Level
-              </label>
-              <select
-                id="roastLevel"
-                value={roastLevel}
-                onChange={(e) => setRoastLevel(e.target.value)}
-                className="w-full p-3 bg-white border border-[#C7A17A] rounded text-[#4A2C2A] text-lg"
-              >
-                <option value="Light">Light</option>
-                <option value="Medium-Light">Medium-Light</option>
-                <option value="Medium">Medium</option>
-                <option value="Medium-Dark">Medium-Dark</option>
-                <option value="Dark">Dark</option>
-              </select>
-            </div>
+            <input
+              type="date"
+              value={roastDate}
+              onChange={(e) => setRoastDate(e.target.value)}
+              className="flex-1 p-3 bg-white border border-[#C7A17A] rounded text-[#4A2C2A] text-lg"
+            />
+            <select
+              value={roastLevel}
+              onChange={(e) => setRoastLevel(e.target.value)}
+              className="flex-1 p-3 bg-white border border-[#C7A17A] rounded text-[#4A2C2A] text-lg"
+            >
+              <option value="Light">Light</option>
+              <option value="Medium-Light">Medium-Light</option>
+              <option value="Medium">Medium</option>
+              <option value="Medium-Dark">Medium-Dark</option>
+              <option value="Dark">Dark</option>
+            </select>
           </div>
 
-          <div className="flex space-x-4 items-center">
-            <div className="flex-1">
-              <label className="block text-[#4A2C2A] text-sm font-bold mb-2" htmlFor="bagWeight">
-                Bag Weight (g)
-              </label>
-              <input
-                id="bagWeight"
-                type="number"
-                value={bagWeight}
-                onChange={(e) => setBagWeight(Number(e.target.value))}
+          {/* Image Upload */}
+          <div>
+            <label className="block text-[#4A2C2A] text-sm font-bold mb-2">Upload Bean Image</label>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => setBeanImage(e.target.files ? e.target.files[0] : null)}
+              className="w-full p-2 bg-white border border-[#C7A17A] rounded"
+            />
+            <p className="text-sm text-gray-600">
+              By uploading, you agree to share this image in the Community Bean Tracking Module (BTM).
+            </p>
+          </div>
+
+          {/* Method and Notes Section */}
+          <button
+            className="w-full text-left text-[#9C6644] font-bold py-3 text-lg"
+            onClick={() => setMethodNotesOpen(!methodNotesOpen)}
+          >
+            Method and Taste Notes {methodNotesOpen ? '▼' : '▶'}
+          </button>
+          {methodNotesOpen && (
+            <div className="space-y-3">
+              <select
+                value={varietal}
+                onChange={(e) => setVarietal(e.target.value)}
                 className="w-full p-3 bg-white border border-[#C7A17A] rounded text-[#4A2C2A] text-lg"
-                placeholder="Enter weight"
-              />
-            </div>
-            <div className="flex-1">
-            <label className="block text-[#4A2C2A] text-sm font-bold mb-2">
-                Rate your Beans
-              </label>
-              <div className="flex justify-between">
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <button key={star} onClick={() => setBeansRating(star)}>
-                    <span className={beansRating >= star ? 'text-[#9C6644] text-2xl' : 'text-gray-400 text-2xl'}>
-                      ★
-                    </span>
-                  </button>
+              >
+                <option value="">Select Varietal</option>
+                {coffeeVarietals.map((v) => (
+                  <option key={v} value={v}>
+                    {v}
+                  </option>
+                ))}
+              </select>
+              <select
+                value={processingMethod}
+                onChange={(e) => setProcessingMethod(e.target.value)}
+                className="w-full p-3 bg-white border border-[#C7A17A] rounded text-[#4A2C2A] text-lg"
+              >
+                <option value="">Select Processing Method</option>
+                {processingMethods.map((method) => (
+                  <option key={method} value={method}>
+                    {method}
+                  </option>
+                ))}
+              </select>
+              <div>
+                <p className="font-bold text-[#4A2C2A]">Taste Notes:</p>
+                {Object.entries(tasteNoteCategories).map(([category, notes]) => (
+                  <div key={category}>
+                    <p>{category}</p>
+                    {notes.map((note) => (
+                      <button
+                        key={note}
+                        onClick={() =>
+                          setTasteNotes((prev) =>
+                            prev.includes(note) ? prev.filter((n) => n !== note) : [...prev, note]
+                          )
+                        }
+                        className={`px-2 py-1 m-1 text-sm rounded ${
+                          tasteNotes.includes(note)
+                            ? 'bg-[#9C6644] text-white'
+                            : 'border border-[#C7A17A] text-[#4A2C2A]'
+                        }`}
+                      >
+                        {note}
+                      </button>
+                    ))}
+                  </div>
                 ))}
               </div>
             </div>
-          </div>
-
-          <div>
-            <button
-              className="w-full text-left text-[#9C6644] font-bold py-3 text-lg"
-              onClick={() => setMethodNotesOpen(!methodNotesOpen)}
-            >
-              Method and taste notes {methodNotesOpen ? '▼' : '▶'}
-            </button>
-            {methodNotesOpen && (
-              <div className="space-y-3">
-                <select
-                  value={varietal}
-                  onChange={(e) => setVarietal(e.target.value)}
-                  className="w-full p-3 bg-white border border-[#C7A17A] rounded text-[#4A2C2A] text-lg"
-                >
-                  <option value="">Select Varietal</option>
-                  {coffeeVarietals.map((v) => (
-                    <option key={v} value={v}>{v}</option>
-                  ))}
-                </select>
-                <select
-                  value={processingMethod}
-                  onChange={(e) => setProcessingMethod(e.target.value)}
-                  className="w-full p-3 bg-white border border-[#C7A17A] rounded text-[#4A2C2A] text-lg"
-                >
-                  <option value="">Select Processing Method</option>
-                  {processingMethods.map((method) => (
-                    <option key={method} value={method}>{method}</option>
-                  ))}
-                </select>
-                <div className="space-y-2">
-                  <p className="text-[#4A2C2A] font-bold">Taste Notes:</p>
-                  {Object.entries(tasteNoteCategories).map(([category, notes]) => (
-                    <div key={category} className="space-y-1">
-                      <p className="text-[#4A2C2A]">{category}:</p>
-                      <div className="flex flex-wrap gap-2">
-                        {notes.map((note) => (
-                          <button
-                            key={note}
-                            onClick={() => setTasteNotes(prev => 
-                              prev.includes(note) ? prev.filter(n => n !== note) : [...prev, note]
-                            )}
-                            className={`px-2 py-1 rounded text-sm ${
-                              tasteNotes.includes(note) ? 'bg-[#9C6644] text-white' : 'bg-white text-[#4A2C2A] border border-[#C7A17A]'
-                            }`}
-                          >
-                            {note}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                <div className="space-y-2">
-                  <label className="flex items-center text-lg text-[#4A2C2A]">
-                    <input
-                      type="checkbox"
-                      checked={isDecaf}
-                      onChange={(e) => setIsDecaf(e.target.checked)}
-                      className="mr-2"
-                    />
-                    Decaf
-                  </label>
-                  <label className="flex items-center text-lg text-[#4A2C2A]">
-                    <input
-                      type="checkbox"
-                      checked={isSampleBeans}
-                      onChange={(e) => setIsSampleBeans(e.target.checked)}
-                      className="mr-2"
-                    />
-                    Sample Beans
-                  </label>
-                  <label className="flex items-center text-lg text-[#4A2C2A]">
-                    <input
-                      type="checkbox"
-                      checked={isPreGround}
-                      onChange={(e) => setIsPreGround(e.target.checked)}
-                      className="mr-2"
-                    />
-                    Pre-Ground
-                  </label>
-                </div>
-              </div>
-            )}
-          </div>
-
-          <div>
-            <button
-              className="w-full text-left text-[#9C6644] font-bold py-3 text-lg"
-              onClick={() => setProducerOriginOpen(!producerOriginOpen)}
-            >
-              Producer Origin {producerOriginOpen ? '▼' : '▶'}
-            </button>
-            {producerOriginOpen && (
-              <div className="space-y-3">
-                <select
-                  value={country}
-                  onChange={(e) => setCountry(e.target.value)}
-                  className="w-full p-3 bg-white border border-[#C7A17A] rounded text-[#4A2C2A] text-lg"
-                >
-                  <option value="">Select Country</option>
-                  {Object.keys(countryRegions).map((c) => (
-                    <option key={c} value={c}>{c}</option>
-                  ))}
-                </select>
-                {country && countryRegions[country].length > 0 && (
-                  <select
-                    value={region}
-                    onChange={(e) => setRegion(e.target.value)}
-                    className="w-full p-3 bg-white border border-[#C7A17A] rounded text-[#4A2C2A] text-lg"
-                  >
-                    <option value="">Select Region</option>
-                    {countryRegions[country].map((r) => (
-                      <option key={r} value={r}>{r}</option>
-                    ))}
-                  </select>
-                )}
-                <input
-                  type="text"
-                  value={farm}
-                  onChange={(e) => setFarm(e.target.value)}
-                  className="w-full p-3 bg-white border border-[#C7A17A] rounded text-[#4A2C2A] text-lg"
-                  placeholder="Farm"
-                />
-                <div>
-                <label className="block text-[#4A2C2A] text-sm font-bold mb-2" htmlFor="altitude">
-                  Altitude (m)
-                </label>
-                <input
-                  id="altitude"
-                  type="number"
-                  value={altitude}
-                  onChange={(e) => setAltitude(Number(e.target.value))}
-                  className="w-full p-3 bg-white border border-[#C7A17A] rounded text-[#4A2C2A] text-lg"
-                  placeholder="Enter altitude"
-                />
-              </div>
-            </div>
           )}
-        </div>
 
-          <div>
-            <button
-              className="w-full text-left text-[#9C6644] font-bold py-3 text-lg"
-              onClick={() => setGrinderSettingOpen(!grinderSettingOpen)}
-            >
-              Grinder setting {grinderSettingOpen ? '▼' : '▶'}
-            </button>
-            {grinderSettingOpen && (
-              <div className="space-y-3">
-                <select
-                  value={grinderType}
-                  onChange={(e) => {
-                    setGrinderType(e.target.value);
-                    setGrinderSetting(grinderTypes[e.target.value as keyof typeof grinderTypes].min);
-                  }}
-                  className="w-full p-3 bg-white border border-[#C7A17A] rounded text-[#4A2C2A] text-lg"
-                >
-                  {Object.keys(grinderTypes).map((type) => (
-                    <option key={type} value={type}>{type}</option>
-                  ))}
-                </select>
-                <select
-                  value={grindSize}
-                  onChange={(e) => setGrindSize(e.target.value)}
-                  className="w-full p-3 bg-white border border-[#C7A17A] rounded text-[#4A2C2A] text-lg"
-                >
-                  <option value="Extra Fine">Extra Fine</option>
-                  <option value="Fine">Fine</option>
-                  <option value="Medium-Fine">Medium-Fine</option>
-                  <option value="Medium">Medium</option>
-                  <option value="Medium-Coarse">Medium-Coarse</option>
-                  <option value="Coarse">Coarse</option>
-                  <option value="Extra Coarse">Extra Coarse</option>
-                </select>
-                <div className="flex items-center space-x-2">
-                  <input
-                    type="range"
-                    min={grinderTypes[grinderType as keyof typeof grinderTypes].min}
-                    max={grinderTypes[grinderType as keyof typeof grinderTypes].max}
-                    value={grinderSetting}
-                    onChange={(e) => setGrinderSetting(Number(e.target.value))}
-                    className="flex-grow"
-                  />
-                  <span className="text-[#4A2C2A] text-lg">{grinderSetting}</span>
-                </div>
-                <p className="text-[#4A2C2A] text-sm">
-                  Selected Grind Size: {grindSize}
-                </p>
-              </div>
-            )}
-          </div>
-
+          {/* Save Button */}
           <button
             onClick={handleSave}
-            className="w-full py-3 bg-[#9C6644] text-white rounded font-bold hover:bg-[#7F5539] text-lg transition-colors"
+            className="w-full py-3 bg-[#9C6644] text-white font-bold rounded hover:bg-[#7F5539] transition-colors"
           >
             Save Coffee Beans
           </button>

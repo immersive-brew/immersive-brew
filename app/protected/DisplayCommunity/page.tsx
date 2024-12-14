@@ -24,7 +24,7 @@ const DisplayCommunity = () => {
 
   async function fetchCommunityCoffeeBeans() {
     try {
-      const { data, error } = await supabase.from("coffeebeans").select("id, images, name").not("images", "is", null);
+      const { data, error } = await supabase.from("coffeebeans").select("id, image_url, name").not("image_url", "is", null);
 
       if (error) {
         throw error;
@@ -58,7 +58,7 @@ const DisplayCommunity = () => {
           <CoffeeGridItem
             key={bean.id}
             id={bean.id}
-            imageUrl={bean.images}
+            imageUrl={bean.image_url}
             coffeeName={bean.name}
             onClick={handleItemClick}
           />

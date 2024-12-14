@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
@@ -28,6 +28,7 @@ interface CoffeeBean {
   grinder_setting: number;
   grind_size: string;
   beans_rating: number;
+  image_url: string | null; // New field for the coffee bean image
 }
 
 const CoffeeBeansClient = ({ userid }: { userid: string }) => {
@@ -61,10 +62,23 @@ const CoffeeBeansClient = ({ userid }: { userid: string }) => {
     }
   }
 
-  const handleAddBeans = async (beansData: any) => {
+  const handleAddBeans = async (beansData: any, file: File | null) => {
     try {
-      // Log the received data
-      console.log('Received beans data:', JSON.stringify(beansData, null, 2));
+      let imageUrl: string | null = null;
+
+      if (file) {
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('coffee-beans-images')
+          .upload(`bean-images/${Date.now()}-${file.name}`, file);
+
+        if (uploadError) {
+          throw uploadError;
+        }
+
+        imageUrl = uploadData?.path
+          ? supabase.storage.from('coffee-beans-images').getPublicUrl(uploadData.path).data.publicUrl
+          : null;
+      }
 
       const { data, error } = await supabase
         .from('coffeebeans')
@@ -78,7 +92,9 @@ const CoffeeBeansClient = ({ userid }: { userid: string }) => {
             weight: beansData.bagWeight,
             varietal: beansData.varietal,
             processing_method: beansData.processingMethod,
-            taste_notes: Array.isArray(beansData.tasteNotes) ? beansData.tasteNotes.join(', ') : beansData.tasteNotes,
+            taste_notes: Array.isArray(beansData.tasteNotes)
+              ? beansData.tasteNotes.join(', ')
+              : beansData.tasteNotes,
             is_decaf: beansData.isDecaf,
             is_sample_beans: beansData.isSampleBeans,
             is_pre_ground: beansData.isPreGround,
@@ -90,6 +106,7 @@ const CoffeeBeansClient = ({ userid }: { userid: string }) => {
             grinder_type: beansData.grinderType,
             grinder_setting: beansData.grinderSetting,
             beans_rating: beansData.beansRating,
+            image_url: imageUrl, // Save the uploaded image URL
           },
         ]);
 
@@ -100,7 +117,7 @@ const CoffeeBeansClient = ({ userid }: { userid: string }) => {
       await fetchCoffeeBeans(); // Refresh the list after adding
       setError(null); // Clear any previous errors
     } catch (error: any) {
-      console.error('Error saving coffee beans:', JSON.stringify(error, null, 2));
+      console.error('Error saving coffee beans:', error);
       setError('Failed to save coffee beans. Please try again.');
     }
   };
@@ -109,9 +126,9 @@ const CoffeeBeansClient = ({ userid }: { userid: string }) => {
     setCoffeeBeans((prevBeans) => prevBeans.filter((bean) => bean.id !== deletedBeanId));
   };
 
-  const handleModalClose = (beansData?: any) => {
+  const handleModalClose = (beansData?: any, file?: File | null) => {
     if (beansData) {
-      handleAddBeans(beansData);
+      handleAddBeans(beansData, file || null);
     }
     setShowBeansModal(false); // Close modal after saving or cancel
   };
@@ -140,6 +157,13 @@ const CoffeeBeansClient = ({ userid }: { userid: string }) => {
             whileTap={{ scale: 0.95 }}
           >
             <CoffeeBeanDelete beanId={bean.id} onDelete={handleDeleteBean} />
+            {bean.image_url && (
+              <img
+                src={bean.image_url}
+                alt={bean.name}
+                className="w-full h-40 object-cover rounded-lg mb-2"
+              />
+            )}
             <h2 className="text-xl font-semibold">{bean.name}</h2>
             <p>Roaster: {bean.roaster}</p>
             <p>Roast Date: {new Date(bean.roast_date).toLocaleDateString()}</p>
@@ -147,16 +171,7 @@ const CoffeeBeansClient = ({ userid }: { userid: string }) => {
             <p>Weight: {bean.weight}g</p>
             <p>Rating: {bean.beans_rating}/5</p>
             {bean.is_decaf && <p className="text-[#B85C38]">Decaf</p>}
-            {bean.is_sample_beans && <p className="text-[#5C3D2E]">Sample Beans</p>}
-            {bean.is_pre_ground && <p className="text-[#2D4263]">Pre-Ground</p>}
             {bean.country && <p>Origin: {bean.country}{bean.region ? `, ${bean.region}` : ''}</p>}
-            {bean.altitude > 0 && <p>Altitude: {bean.altitude}m</p>}
-            {bean.varietal && <p>Varietal: {bean.varietal}</p>}
-            {bean.processing_method && <p>Processing: {bean.processing_method}</p>}
-            {bean.taste_notes && <p>Taste Notes: {bean.taste_notes}</p>}
-            {bean.grinder_type && (
-              <p>Grinder: {bean.grinder_type}, Setting: {bean.grinder_setting}, Size: {bean.grind_size}</p>
-            )}
           </motion.div>
         ))}
       </div>
@@ -175,6 +190,9 @@ const CoffeeBeansClient = ({ userid }: { userid: string }) => {
           onClose={handleModalClose}
         />
       )}
+      <p className="text-sm text-gray-600 mt-4">
+        By uploading an image of your coffee beans, you consent to sharing it in the Community Bean Tracking Module (BTM).
+      </p>
     </div>
   );
 };
