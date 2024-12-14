@@ -1,8 +1,6 @@
-import DeployButton from "@/components/DeployButton";
-import AuthButton from "@/components/AuthButton";
 import { createClient } from "@/utils/supabase/server";
-import RecipeRandomizer from "@/components/RecipeRandomizer";
 import { redirect } from "next/navigation";
+import RecipeRandomizer from "@/components/RecipeRandomizer";
 
 export default async function ProtectedPage() {
   const supabase = createClient();
@@ -16,58 +14,105 @@ export default async function ProtectedPage() {
   }
 
   return (
-    <div className="flex-1 w-full flex flex-col items-center gap-10">
-      {/* Customizable Banner with CSS Animations */}
-      <div
-        className="relative w-full h-[300px] bg-cover bg-center flex items-center justify-center text-white fade-in"
-        style={{ backgroundImage: "url('/path-to-your-image.jpg')" }}
+    <div className="flex flex-col min-h-screen bg-[#ffe6cc] text-[#4a3f35]">
+      {/* Hero Section */}
+      <header
+        className=""
+        style={{
+          backgroundImage: "url('/path-to-your-image.jpg')",
+        }}
       >
-        <div className="bg-black bg-opacity-50 p-4 rounded-md text-slide-up">
-          <h1 className="text-4xl font-bold">Welcome to Our Recipe Platform!</h1>
-          <p className="mt-2 text-lg">Discover daily recipes and much more.</p>
+        <div className="p-6 rounded-md text-center">
+          <h1 className="text-5xl font-extrabold">Welcome to Immersive Brew</h1>
+          <p className="mt-4 text-lg font-medium">
+            Discover guides and elevate your coffee experience.
+          </p>
+          <a
+            href="/protected/brewguides"
+            className="mt-6 px-6 py-3 rounded-lg bg-[#a9826e] text-white font-bold text-lg shadow-lg hover:bg-[#8a6a5c] transition-colors inline-block"
+          >
+            Get Started
+          </a>
         </div>
-      </div>
+      </header>
 
       {/* Recipe of the Day Section */}
-      <div className="flex flex-col items-center">
-        <h2 className="text-2xl font-semibold">Recipe of the Day</h2>
+      <section id="recipes" className="flex flex-col items-center py-16 px-8">
+        <h2 className="text-3xl font-bold mb-6">Recipe of the Day</h2>
         <RecipeRandomizer />
-      </div>
+      </section>
 
-      {/* Features Summary Grid with Staggered Animation */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-6xl px-4">
-        {[...Array(3)].map((_, index) => (
-          <div
-            key={index}
-            className={`p-4 border rounded-lg shadow-md text-center fade-in stagger-${index + 1}`}
-          >
-            <h3 className="font-bold text-xl">Feature {index + 1}</h3>
-            <p className="mt-2 text-sm text-gray-600">Short description of Feature {index + 1}.</p>
+      {/* Features Section */}
+      <section id="features" className="py-16 px-8">
+        <div className="max-w-6xl mx-auto">
+          <h2 className="text-3xl font-bold text-center mb-10">
+            What We Offer
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+            {/* Journal Feature */}
+            <div className="p-6 bg-white shadow-md rounded-lg text-center hover:shadow-lg transition-shadow">
+              <img
+                src="/journal.webp"
+                alt="Journal feature"
+                className="w-full h-48 object-cover rounded-t-lg mb-4"
+              />
+              <h3 className="text-xl font-bold mb-4">Journal</h3>
+              <p className="text-gray-600">
+                Log your coffee journey to keep track of progress, refine your
+                tastes, and improve your brewing skills over time.
+              </p>
+            </div>
+
+            {/* Brew Guides Feature */}
+            <div className="p-6 bg-white shadow-md rounded-lg text-center hover:shadow-lg transition-shadow">
+              <img
+                src="/brew.webp"
+                alt="Brew guides feature"
+                className="w-full h-48 object-cover rounded-t-lg mb-4"
+              />
+              <h3 className="text-xl font-bold mb-4">Brew Guides</h3>
+              <p className="text-gray-600">
+                Beginner-friendly guides on using different brews like Chemex,
+                Hario V60, Aeropress, and French Press. Perfect your technique
+                and enjoy better coffee.
+              </p>
+            </div>
+
+            {/* Community Feature */}
+            <div className="p-6 bg-white shadow-md rounded-lg text-center hover:shadow-lg transition-shadow">
+              <img
+                src="/community.webp"
+                alt="Community feature"
+                className="w-full h-48 object-cover rounded-t-lg mb-4"
+              />
+              <h3 className="text-xl font-bold mb-4">Community</h3>
+              <p className="text-gray-600">
+                Share your coffee entries with the community and participate in
+                blind tastings. Receive constructive feedback to improve while
+                fostering positive connections.
+              </p>
+            </div>
           </div>
-        ))}
-      </div>
+        </div>
+      </section>
 
-      {/* Glowing Button with Hover Effect */}
-      <div className="mt-6">
-        <button className="px-6 py-3 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 text-white font-bold text-lg shadow-lg glowing-button">
-          Go to Features Page
-        </button>
-      </div>
-
-      {/* Footer */}
-      <footer className="w-full border-t border-t-foreground/10 p-8 flex justify-center text-center text-xs">
-        <p>
-          Powered by{" "}
+      {/* Call-to-Action Section */}
+      <section
+        id="cta"
+        className="py-16 px-8 bg-gradient-to-r from-[#ffe6cc] to-[#f5e6d3]"
+      >
+        <div className="max-w-6xl mx-auto text-center">
+          <h2 className="text-4xl font-bold mb-6">
+            Ready to Start Your Journey?
+          </h2>
           <a
-            href="https://supabase.com/?utm_source=create-next-app&utm_medium=template&utm_term=nextjs"
-            target="_blank"
-            className="font-bold hover:underline"
-            rel="noreferrer"
+            href="/protected/journal/brew"
+            className="mt-6 px-6 py-3 rounded-lg bg-[#a9826e] text-white font-bold text-lg shadow-lg hover:bg-[#8a6a5c] transition-colors inline-block"
           >
-            Immersive Brew w/ Supabase
+            Start Brewing
           </a>
-        </p>
-      </footer>
+        </div>
+      </section>
     </div>
   );
 }

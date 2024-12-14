@@ -29,7 +29,6 @@ const RecipeRandomizer: React.FC<RecipeRandomizerProps> = ({ onSelect }) => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [buttonVisible, setButtonVisible] = useState<boolean>(true);
-  const [displayRecipe, setDisplayRecipe] = useState<boolean>(false);
 
   useEffect(() => {
     const fetchRecipes = async () => {
@@ -65,8 +64,12 @@ const RecipeRandomizer: React.FC<RecipeRandomizerProps> = ({ onSelect }) => {
         onSelect(randomRecipe);
       }
       setButtonVisible(false);
-      setDisplayRecipe(true);
     }
+  };
+
+  const handleClose = () => {
+    setSelectedRecipe(null); // Reset selected recipe
+    setButtonVisible(true); // Show the "Randomize Recipe" button
   };
 
   if (loading) return <p>Loading recipes...</p>;
@@ -74,23 +77,36 @@ const RecipeRandomizer: React.FC<RecipeRandomizerProps> = ({ onSelect }) => {
   if (recipes.length === 0) return <p>No recipes available.</p>;
 
   return (
-    <div className="flex flex-col items-center bg-white p-6 rounded shadow-md">
+    <div className="">
       {buttonVisible && (
         <button
           onClick={handleRandomize}
-          className="p-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+          className="px-6 py-3 bg-[#a9826e] text-white font-bold text-lg rounded-lg shadow-md hover:bg-[#8a6a5c] transition-all"
         >
           Randomize Recipe
         </button>
       )}
-      {displayRecipe && selectedRecipe && (
-        <div className="mt-4 mb-4 p-4 border rounded w-full bg-white">
-          <h3 className="font-bold text-lg">{selectedRecipe.name}</h3>
-          <p className="mb-4">{selectedRecipe.description}</p>
-          <h4 className="font-bold mt-4 mb-2">Steps:</h4>
-          <ol className="list-decimal ml-6">
+
+      {selectedRecipe && (
+        <div className="mt-8 p-6 bg-white rounded-lg shadow-md w-full">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="font-bold text-2xl text-[#4a3f35]">
+              {selectedRecipe.name}
+            </h3>
+            <button
+              onClick={handleClose}
+              className="text-sm px-4 py-2 bg-[#a9826e] text-white rounded-md shadow hover:bg-[#8a6a5c] transition-all"
+            >
+              Close
+            </button>
+          </div>
+          <p className="text-gray-700 mb-6">{selectedRecipe.description}</p>
+          <h4 className="text-xl font-semibold text-[#4a3f35] mb-4">
+            Brewing Steps:
+          </h4>
+          <ol className="list-decimal ml-6 space-y-4">
             {selectedRecipe.steps.map((step, index) => (
-              <li key={index} className="mb-4">
+              <li key={index} className="text-gray-700">
                 <div>
                   <strong>Step Type:</strong> {step.step_type}
                 </div>
@@ -99,11 +115,13 @@ const RecipeRandomizer: React.FC<RecipeRandomizerProps> = ({ onSelect }) => {
                 </div>
                 {step.weight !== null && (
                   <div>
-                    <strong>Weight:</strong> {step.weight}
+                    <strong>Weight:</strong> {step.weight} grams
                   </div>
                 )}
                 <div>
-                  <strong>Duration:</strong> {Math.floor(step.duration / 60)} minutes {step.duration % 60} seconds
+                  <strong>Duration:</strong>{" "}
+                  {Math.floor(step.duration / 60)} minutes{" "}
+                  {step.duration % 60} seconds
                 </div>
               </li>
             ))}
