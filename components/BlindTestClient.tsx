@@ -45,23 +45,23 @@ export default function BlindTestClient() {
     {
       instruction:
         "Grind beans finely and prepare equal cups to the number of beans selected. Put beans into the cups.",
-      imageSrc: "/images/grind-beans.jpg", // Update the image paths accordingly
+      imageSrc: "/images/grinding.gif", // Update the image paths accordingly
       altText: "Grinding coffee beans",
     },
     {
       instruction: "Boil water to 100 degrees Celsius.",
-      imageSrc: "/images/boil-water.jpg",
+      imageSrc: "/images/boiling.gif",
       altText: "Boiling water",
     },
     {
       instruction: "Mix boiled water with ground beans in the cups.",
-      imageSrc: "/images/mix-water-beans.jpg",
+      imageSrc: "/images/stirring.gif",
       altText: "Mixing water with ground beans",
     },
     {
       instruction:
         "Taste with a small spoon and focus on the attributes: flavor, aroma, acidity, body, and sweetness.",
-      imageSrc: "/images/taste-coffee.jpg",
+      imageSrc: "/images/tastegif.gif",
       altText: "Tasting coffee with a spoon",
     },
   ];
