@@ -46,6 +46,7 @@ const menuItems: MenuItem[] = [
       { label: 'Create Help Thread', href: '/protected/createhelpthread' },
       { label: 'Find Local Roasters', href: '/protected/googleplaces' },
       { label: 'Community BTM', href: '/protected/displaycommunity' },
+      { label: 'Budget Guides', href: '/protected/budgetguides' },
     ],
   },
   {

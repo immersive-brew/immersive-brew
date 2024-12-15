@@ -1,7 +1,9 @@
-"use client";
+'use client';
 
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { createClient } from "@/utils/supabase/client";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 
 export default function CompareClient() {
   const [entries, setEntries] = useState([]);
@@ -9,6 +11,12 @@ export default function CompareClient() {
   const [entryData, setEntryData] = useState({}); // Store entry data in an object
   const [user, setCurrentUser] = useState(null);
   const [isUserFetched, setIsUserFetched] = useState(false); // Track if user is fetched
+
+  // Date Filters
+  const [searchType, setSearchType] = useState("none"); // "none", "single", "range"
+  const [singleDate, setSingleDate] = useState(null);
+  const [startDate, setStartDate] = useState(null);
+  const [endDate, setEndDate] = useState(null);
 
   const supabase = createClient();
 
@@ -28,18 +36,41 @@ export default function CompareClient() {
     fetchUser();
   }, [supabase]);
 
-  // Fetch entries for the current user
+  // Fetch entries for the current user with date filters
   useEffect(() => {
     let isMounted = true;
 
     const fetchEntries = async () => {
       if (!user || !isUserFetched) return;
 
-      const { data, error } = await supabase
+      let query = supabase
         .from("entries")
         .select("*")
         .eq("userid", user?.id) // Filter by user ID
         .order("created_at", { ascending: false }); // Order by date descending
+
+      // Apply date filters based on searchType
+      if (searchType === "single" && singleDate) {
+        const start = new Date(singleDate);
+        start.setHours(0, 0, 0, 0);
+        const end = new Date(singleDate);
+        end.setHours(23, 59, 59, 999);
+
+        query = query
+          .gte("created_at", start.toISOString())
+          .lte("created_at", end.toISOString());
+      } else if (searchType === "range" && startDate && endDate) {
+        const start = new Date(startDate);
+        start.setHours(0, 0, 0, 0);
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+
+        query = query
+          .gte("created_at", start.toISOString())
+          .lte("created_at", end.toISOString());
+      }
+
+      const { data, error } = await query;
 
       if (error) {
         console.error("Error fetching entries:", error);
@@ -53,7 +84,7 @@ export default function CompareClient() {
     return () => {
       isMounted = false;
     };
-  }, [supabase, user, isUserFetched]);
+  }, [supabase, user, isUserFetched, searchType, singleDate, startDate, endDate]);
 
   // Fetch data for selected entries
   useEffect(() => {
@@ -284,37 +315,268 @@ export default function CompareClient() {
         )
       : [];
 
+  // Handler for Search Button
+  const handleSearch = () => {
+    // The useEffect hook will automatically fetch entries based on updated state
+  };
+
+  // Handler for Reset Button
+  const handleReset = () => {
+    setSearchType("none");
+    setSingleDate(null);
+    setStartDate(null);
+    setEndDate(null);
+  };
+
   return (
-    <div style={{ padding: "40px", backgroundColor: "#f5f5f5", minHeight: "100vh", textAlign: "center" }}>
-      <h1 style={{ marginBottom: "40px" }}>Compare Entries</h1>
-      <div style={{ display: "flex", justifyContent: "center", gap: "20px", flexWrap: "wrap" }}>
+    <div
+      style={{
+        padding: "40px",
+        backgroundColor: "#1a1a1a", // Dark background
+        minHeight: "100vh",
+        textAlign: "center",
+        color: "#f0f0f0", // Light text color
+      }}
+    >
+      <h1 style={{ marginBottom: "40px", color: "#ffffff" }}>Compare Entries</h1>
+
+      {/* Search Filters */}
+      <div
+        style={{
+          backgroundColor: "#333333", // Darker background for contrast
+          padding: "20px",
+          borderRadius: "12px",
+          boxShadow: "0 4px 12px rgba(0, 0, 0, 0.5)",
+          maxWidth: "800px",
+          margin: "0 auto 40px",
+          textAlign: "left",
+        }}
+      >
+        <h2 style={{ marginBottom: "20px", color: "#ffffff" }}>
+          Search Entries by Date
+        </h2>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "20px",
+            flexWrap: "wrap",
+          }}
+        >
+          <div>
+            <label style={{ color: "#ffffff" }}>
+              <input
+                type="radio"
+                name="searchType"
+                value="none"
+                checked={searchType === "none"}
+                onChange={() => setSearchType("none")}
+                style={{ marginRight: "8px" }}
+              />
+              No Filter
+            </label>
+          </div>
+          <div>
+            <label style={{ color: "#ffffff" }}>
+              <input
+                type="radio"
+                name="searchType"
+                value="single"
+                checked={searchType === "single"}
+                onChange={() => setSearchType("single")}
+                style={{ marginRight: "8px" }}
+              />
+              Single Date
+            </label>
+            {searchType === "single" && (
+              <div style={{ marginTop: "10px" }}>
+                <DatePicker
+                  selected={singleDate}
+                  onChange={(date) => setSingleDate(date)}
+                  dateFormat="yyyy-MM-dd"
+                  placeholderText="Select a date"
+                  maxDate={new Date()}
+                  isClearable
+                  style={{
+                    backgroundColor: "#555555",
+                    color: "#ffffff",
+                    border: "1px solid #777777",
+                    borderRadius: "4px",
+                    padding: "8px",
+                  }}
+                />
+              </div>
+            )}
+          </div>
+          <div>
+            <label style={{ color: "#ffffff" }}>
+              <input
+                type="radio"
+                name="searchType"
+                value="range"
+                checked={searchType === "range"}
+                onChange={() => setSearchType("range")}
+                style={{ marginRight: "8px" }}
+              />
+              Date Range
+            </label>
+            {searchType === "range" && (
+              <div
+                style={{
+                  marginTop: "10px",
+                  display: "flex",
+                  gap: "10px",
+                  flexWrap: "wrap",
+                }}
+              >
+                <DatePicker
+                  selected={startDate}
+                  onChange={(date) => setStartDate(date)}
+                  selectsStart
+                  startDate={startDate}
+                  endDate={endDate}
+                  dateFormat="yyyy-MM-dd"
+                  placeholderText="Start Date"
+                  maxDate={new Date()}
+                  isClearable
+                  style={{
+                    backgroundColor: "#555555",
+                    color: "#ffffff",
+                    border: "1px solid #777777",
+                    borderRadius: "4px",
+                    padding: "8px",
+                  }}
+                />
+                <DatePicker
+                  selected={endDate}
+                  onChange={(date) => setEndDate(date)}
+                  selectsEnd
+                  startDate={startDate}
+                  endDate={endDate}
+                  minDate={startDate}
+                  dateFormat="yyyy-MM-dd"
+                  placeholderText="End Date"
+                  maxDate={new Date()}
+                  isClearable
+                  style={{
+                    backgroundColor: "#555555",
+                    color: "#ffffff",
+                    border: "1px solid #777777",
+                    borderRadius: "4px",
+                    padding: "8px",
+                  }}
+                />
+              </div>
+            )}
+          </div>
+        </div>
+        <div
+          style={{
+            marginTop: "20px",
+            display: "flex",
+            gap: "10px",
+          }}
+        >
+          <button
+            onClick={handleSearch}
+            style={{
+              padding: "10px 20px",
+              backgroundColor: "#007BFF",
+              color: "#ffffff",
+              border: "none",
+              borderRadius: "6px",
+              cursor: "pointer",
+              transition: "background-color 0.3s ease",
+            }}
+            onMouseOver={(e) => (e.target.style.backgroundColor = "#0056b3")}
+            onMouseOut={(e) => (e.target.style.backgroundColor = "#007BFF")}
+          >
+            Search
+          </button>
+          <button
+            onClick={handleReset}
+            style={{
+              padding: "10px 20px",
+              backgroundColor: "#6c757d",
+              color: "#ffffff",
+              border: "none",
+              borderRadius: "6px",
+              cursor: "pointer",
+              transition: "background-color 0.3s ease",
+            }}
+            onMouseOver={(e) => (e.target.style.backgroundColor = "#5a6268")}
+            onMouseOut={(e) => (e.target.style.backgroundColor = "#6c757d")}
+          >
+            Reset
+          </button>
+        </div>
+      </div>
+
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          gap: "20px",
+          flexWrap: "wrap",
+        }}
+      >
         {/* Selection Card */}
         <div
           style={{
-            backgroundColor: "#ffffff",
+            backgroundColor: "#333333", // Dark background for contrast
             padding: "20px",
             borderRadius: "12px",
-            boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)",
+            boxShadow: "0 4px 12px rgba(0, 0, 0, 0.5)",
             width: "300px",
+            color: "#f0f0f0", // Light text color
           }}
         >
-          <h2 style={{ marginBottom: "20px" }}>Select Entries (Up to 2)</h2>
-          <div style={{ maxHeight: "400px", overflowY: "auto" }}>
-            {entries.map((entry) => (
-              <div key={entry.id} style={{ marginBottom: "10px", display: "flex", alignItems: "center" }}>
-                <input
-                  type="checkbox"
-                  checked={selectedEntries.includes(entry.id)}
-                  onChange={() => handleCheckboxChange(entry.id)}
-                  disabled={!selectedEntries.includes(entry.id) && selectedEntries.length >= 2}
-                  style={{ width: "16px", height: "16px" }}
-                />
-                <label style={{ marginLeft: "8px", cursor: "pointer" }}>
-                  {formatDateTime(entry.created_at)}
-                </label>
-              </div>
-            ))}
-          </div>
+          <h2 style={{ marginBottom: "20px", color: "#ffffff" }}>
+            Select Entries (Up to 2)
+          </h2>
+          {entries.length === 0 ? (
+            <p>No entries found for the selected date criteria.</p>
+          ) : (
+            <div style={{ maxHeight: "400px", overflowY: "auto" }}>
+              {entries.map((entry) => (
+                <div
+                  key={entry.id}
+                  style={{
+                    marginBottom: "10px",
+                    display: "flex",
+                    alignItems: "center",
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={selectedEntries.includes(entry.id)}
+                    onChange={() => handleCheckboxChange(entry.id)}
+                    disabled={
+                      !selectedEntries.includes(entry.id) &&
+                      selectedEntries.length >= 2
+                    }
+                    style={{
+                      width: "16px",
+                      height: "16px",
+                      accentColor: "#007BFF",
+                    }}
+                    aria-label={`Select entry created on ${formatDateTime(
+                      entry.created_at
+                    )}`}
+                  />
+                  <label
+                    style={{
+                      marginLeft: "8px",
+                      cursor: "pointer",
+                      color: "#ffffff",
+                    }}
+                  >
+                    {formatDateTime(entry.created_at)}
+                  </label>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Comparison Card */}
@@ -323,14 +585,18 @@ export default function CompareClient() {
           entryData[selectedEntries[1]] && (
             <div
               style={{
-                backgroundColor: "#ffffff",
+                backgroundColor: "#333333", // Dark background
                 padding: "20px",
                 borderRadius: "12px",
-                boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)",
+                boxShadow: "0 4px 12px rgba(0, 0, 0, 0.5)",
                 width: "600px",
+                overflowX: "auto",
+                color: "#f0f0f0", // Light text color
               }}
             >
-              <h2 style={{ marginBottom: "20px" }}>Comparison</h2>
+              <h2 style={{ marginBottom: "20px", color: "#ffffff" }}>
+                Comparison
+              </h2>
               <table
                 style={{
                   width: "100%",
@@ -342,7 +608,7 @@ export default function CompareClient() {
                   <tr>
                     <th
                       style={{
-                        borderBottom: "2px solid #ccc",
+                        borderBottom: "2px solid #555555",
                         textAlign: "left",
                         padding: "10px",
                         width: "30%",
@@ -352,7 +618,7 @@ export default function CompareClient() {
                     </th>
                     <th
                       style={{
-                        borderBottom: "2px solid #ccc",
+                        borderBottom: "2px solid #555555",
                         textAlign: "left",
                         padding: "10px",
                         width: "25%",
@@ -362,7 +628,7 @@ export default function CompareClient() {
                     </th>
                     <th
                       style={{
-                        borderBottom: "2px solid #ccc",
+                        borderBottom: "2px solid #555555",
                         textAlign: "center",
                         padding: "10px",
                         width: "10%",
@@ -372,7 +638,7 @@ export default function CompareClient() {
                     </th>
                     <th
                       style={{
-                        borderBottom: "2px solid #ccc",
+                        borderBottom: "2px solid #555555",
                         textAlign: "left",
                         padding: "10px",
                         width: "25%",
@@ -387,12 +653,35 @@ export default function CompareClient() {
                     const value1 = entryData[selectedEntries[0]][field.key];
                     const value2 = entryData[selectedEntries[1]][field.key];
 
+                    // Format specific fields
+                    let displayValue1 = value1;
+                    let displayValue2 = value2;
+
+                    if (field.key === "overall_time") {
+                      displayValue1 = formatTime(value1);
+                      displayValue2 = formatTime(value2);
+                    }
+
                     return (
                       <tr key={field.key}>
-                        <td>{field.label}</td>
-                        <td>{value1 ?? "N/A"}</td>
-                        <td>{calculateDifference(field, value1, value2)}</td>
-                        <td>{value2 ?? "N/A"}</td>
+                        <td style={{ padding: "10px", borderBottom: "1px solid #555555" }}>
+                          {field.label}
+                        </td>
+                        <td style={{ padding: "10px", borderBottom: "1px solid #555555" }}>
+                          {displayValue1 ?? "N/A"}
+                        </td>
+                        <td
+                          style={{
+                            padding: "10px",
+                            borderBottom: "1px solid #555555",
+                            textAlign: "center",
+                          }}
+                        >
+                          {calculateDifference(field, value1, value2)}
+                        </td>
+                        <td style={{ padding: "10px", borderBottom: "1px solid #555555" }}>
+                          {displayValue2 ?? "N/A"}
+                        </td>
                       </tr>
                     );
                   })}
@@ -406,16 +695,17 @@ export default function CompareClient() {
       {explanations.length > 0 && (
         <div
           style={{
-            backgroundColor: "#ffffff",
+            backgroundColor: "#333333", // Dark background
             padding: "20px",
             borderRadius: "12px",
-            boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)",
+            boxShadow: "0 4px 12px rgba(0, 0, 0, 0.5)",
             maxWidth: "800px",
             margin: "40px auto 0",
             textAlign: "left",
+            color: "#f0f0f0", // Light text color
           }}
         >
-          <h2 style={{ textAlign: "center", marginBottom: "20px" }}>
+          <h2 style={{ textAlign: "center", marginBottom: "20px", color: "#ffffff" }}>
             Analysis
           </h2>
           <ul>
