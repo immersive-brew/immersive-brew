@@ -38,10 +38,49 @@ const CoffeeLogo = () => (
         height="50"
         viewBox="0 0 1024 1024"
         className="text-[#2c1010] transition-transform group-hover:scale-110"
+        xmlns="http://www.w3.org/2000/svg"
     >
-        {/* SVG paths */}
+        {/* Coffee Cup */}
+        <path
+            d="M800 832H224c-35.346 0-64-28.654-64-64V416c0-35.346 28.654-64 64-64h576c35.346 0 64 28.654 64 64v352c0 35.346-28.654 64-64 64z"
+            fill="currentColor"
+            stroke="currentColor"
+            strokeWidth="20"
+            strokeLinejoin="round"
+        />
+        {/* Handle */}
+        <path
+            d="M800 512c0 88.366-71.634 160-160 160"
+            stroke="currentColor"
+            strokeWidth="20"
+            fill="none"
+            strokeLinecap="round"
+        />
+        {/* Steam Lines */}
+        <path
+            d="M300 200c0-40 40-40 40 0s-40 40-40 0"
+            stroke="currentColor"
+            strokeWidth="20"
+            fill="none"
+            strokeLinecap="round"
+        />
+        <path
+            d="M400 150c0-40 40-40 40 0s-40 40-40 0"
+            stroke="currentColor"
+            strokeWidth="20"
+            fill="none"
+            strokeLinecap="round"
+        />
+        <path
+            d="M500 200c0-40 40-40 40 0s-40 40-40 0"
+            stroke="currentColor"
+            strokeWidth="20"
+            fill="none"
+            strokeLinecap="round"
+        />
     </svg>
 );
+
 
 export const runtime = 'edge';
 
