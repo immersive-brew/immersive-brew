@@ -47,6 +47,7 @@ export default async function StartBrewProcessPage({
   const grindSetting = parseFloat(searchParams.grindSetting as string);
   const temperature = parseFloat(searchParams.temperature as string);
   const recipeId = (searchParams.recipeId as string) || "";
+  const brewTools = (searchParams.brewTools as string) || "";
   console.log("params", {waterAmount , coffeeAmount, recipeId});
 
   
@@ -206,7 +207,7 @@ export default async function StartBrewProcessPage({
 
         {/* Brew Timer */}
         <div className="mt-8">
-          <BrewTimer stages={recipe.steps} recipeId={recipe.id} temperature={temperature} grindSetting={grindSetting} waterAmount={waterAmount} coffeeAmount={coffeeAmount} /> {/* Pass the dynamic stages from the recipe */}
+          <BrewTimer stages={recipe.steps} recipeId={recipe.id} temperature={temperature} grindSetting={grindSetting} waterAmount={waterAmount} coffeeAmount={coffeeAmount} brewTools={brewTools}/> {/* Pass the dynamic stages from the recipe */}
         </div>
       </div>
 

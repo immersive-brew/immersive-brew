@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from 'react';
 import { createClient } from '@/utils/supabase/client';
-import { userAgent } from 'next/server';
 
 type JournalEntryType = {
   id: string; // Assuming 'id' is UUID
@@ -28,8 +27,6 @@ interface ManualEntryFormProps {
 
 export default function ManualEntryForm({ entry, onUpdate, onCancel }: ManualEntryFormProps) {
   const [user, setCurrentUser] = useState<any>(null);
-
-  // Initialize Supabase client
   const supabase = createClient();
 
   const [formData, setFormData] = useState({
@@ -39,15 +36,13 @@ export default function ManualEntryForm({ entry, onUpdate, onCancel }: ManualEnt
     grindSetting: '',
     minutes: '',
     seconds: '',
-    recipeId: '', // Keep as string
+    recipeId: '',
     userId: '',
   });
 
   const [recipes, setRecipes] = useState<RecipeType[]>([]);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
-
-  
 
   // Fetch all recipes from the database
   const fetchRecipes = async () => {
@@ -60,14 +55,13 @@ export default function ManualEntryForm({ entry, onUpdate, onCancel }: ManualEnt
       console.error('Error fetching recipes:', error);
       setMessage({ type: 'error', text: 'Failed to load recipes. Please try again.' });
     } else if (data && data.length > 0) {
-      console.log('Fetched recipes:', data);
       setRecipes(data);
     } else {
-      console.warn('No recipes found in the database');
       setMessage({ type: 'error', text: 'No recipes available. Please add a recipe first.' });
     }
   };
 
+  // Fetch user data on mount
   useEffect(() => {
     const fetchUser = async () => {
       const {
@@ -78,30 +72,49 @@ export default function ManualEntryForm({ entry, onUpdate, onCancel }: ManualEnt
         console.error('Error fetching user:', error.message);
       } else {
         setCurrentUser(user);
-        console.log('Fetched user:', user);
       }
     };
     fetchUser();
     fetchRecipes();
   }, []);
 
+  // Whenever entry or user changes, initialize the form data
   useEffect(() => {
-    if (entry && user) { // Ensure both `entry` and `user` are available
+    if (entry && user) {
       const minutes = Math.floor(entry.overall_time / 60);
       const seconds = entry.overall_time % 60;
-      setFormData({
+
+      // Initialize with entry values (including recipeId if available)
+      setFormData((prev) => ({
+        ...prev,
         temperature: entry.temperature.toString(),
         coffeeWeight: entry.coffee_weight.toString(),
         waterWeight: entry.water_weight.toString(),
         grindSetting: entry.grind_setting,
         minutes: minutes.toString(),
         seconds: seconds.toString(),
-        recipeId: entry.recipeid || '', // No conversion needed
-        userId: user.id, // Access only if `user` is non-null
-      });
+        recipeId: entry.recipeid || '',
+        userId: user.id,
+      }));
+    } else if (user && !entry) {
+      // For a new entry, just ensure userId is set
+      setFormData((prev) => ({
+        ...prev,
+        userId: user.id,
+      }));
     }
   }, [entry, user]);
-  
+
+  // Ensure that once recipes are fetched, if we have an existing entry with a recipeId,
+  // we select that recipe in the dropdown.
+  useEffect(() => {
+    if (entry?.recipeid && recipes.length > 0) {
+      setFormData((prev) => ({
+        ...prev,
+        recipeId: entry.recipeid || '',
+      }));
+    }
+  }, [entry?.recipeid, recipes]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setFormData((prev) => ({
@@ -139,11 +152,9 @@ export default function ManualEntryForm({ entry, onUpdate, onCancel }: ManualEnt
       water_weight: Number(formData.waterWeight),
       grind_setting: formData.grindSetting,
       overall_time: totalSeconds,
-      recipeid: formData.recipeId, // Pass as string (UUID)
+      recipeid: formData.recipeId,
       userid: user.id,
     };
-
-    console.log('Updated data:', updatedData);
 
     try {
       let response;
@@ -258,7 +269,7 @@ export default function ManualEntryForm({ entry, onUpdate, onCancel }: ManualEnt
         <div>
           <label className="block text-sm font-medium">Select Recipe</label>
           <select
-            name="recipeId" // Matches formData.recipeId
+            name="recipeId"
             value={formData.recipeId}
             onChange={handleChange}
             className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
@@ -340,7 +351,6 @@ export default function ManualEntryForm({ entry, onUpdate, onCancel }: ManualEnt
         </div>
       </form>
 
-      {/* Feedback message */}
       {message && (
         <p className={`mt-4 text-sm ${message.type === 'success' ? 'text-green-600' : 'text-red-600'}`}>
           {message.text}

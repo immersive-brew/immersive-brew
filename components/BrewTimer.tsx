@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import { useState, useEffect } from "react";
 import { motion, useAnimation } from "framer-motion";
@@ -19,6 +19,7 @@ interface BrewTimerProps {
   grindSetting: number;
   waterAmount: number;
   coffeeAmount: number;
+  brewTools?: string[]; // New optional prop for brewing tools
 }
 
 const supabase = createClient();
@@ -30,6 +31,7 @@ const BrewTimer: React.FC<BrewTimerProps> = ({
   grindSetting,
   waterAmount,
   coffeeAmount,
+  brewTools = [], // Default empty array if not provided
 }) => {
   const router = useRouter();
 
@@ -85,8 +87,9 @@ const BrewTimer: React.FC<BrewTimerProps> = ({
             setCurrentStage(next);
             setTimeLeft(stages[next].duration);
           } else {
-            // After last stage, just keep overall time running if needed
+            // After last stage, just set timeLeft to 0 (brew done)
             setTimeLeft(0);
+            finishBrew(); // Automatically finish brew when last stage is done
           }
         }
       }, 1000);
@@ -146,18 +149,40 @@ const BrewTimer: React.FC<BrewTimerProps> = ({
       return;
     }
 
-    const entryData = {
-      recipeid: recipeId,
-      overall_time: overallTime,
-      temperature,
-      grind_setting: grindSetting,
-      water_weight: waterAmount,
-      coffee_weight: coffeeAmount,
-      userid: user.id, // Include user id
-    };
-
     try {
+      // Fetch the current maximum id from the entries table
+      const { data: maxEntry, error: maxEntryError } = await supabase
+        .from('entries')
+        .select('id')
+        .order('id', { ascending: false })
+        .limit(1)
+        .single();
+
+      if (maxEntryError && maxEntryError.code !== 'PGRST116') { // PGRST116: No rows found
+        console.error('Error fetching max entry id:', maxEntryError);
+        alert("An error occurred while determining the entry ID.");
+        return;
+      }
+
+      let newId = 1;
+      if (maxEntry && maxEntry.id) {
+        newId = maxEntry.id + 1;
+      }
+
+      const entryData = {
+        id: newId, // Manually set the id
+        recipeid: recipeId,
+        overall_time: overallTime,
+        temperature,
+        grind_setting: grindSetting,
+        water_weight: waterAmount,
+        coffee_weight: coffeeAmount,
+        userid: user.id,
+        brew_tools: brewTools, // Save the selected brewing tools
+      };
+
       const { error } = await supabase.from("entries").insert([entryData]);
+
       if (error) {
         console.error("Error inserting data:", error);
         alert("An error occurred while saving your brew data.");

@@ -1,4 +1,5 @@
 'use client';
+
 import { useState, useEffect } from 'react';
 import { createClient } from '@/utils/supabase/client'; // Import createClient
 import GenerateImage from './generateImage';
@@ -120,29 +121,81 @@ export default function GenerateLinkFromImage() {
   };
 
   return (
-    <div>
+    <div className="max-w-2xl mx-auto p-6 bg-white shadow-md rounded-md">
       <GenerateImage onImageGenerated={handleImageGenerated} />
 
       {/* Upload Button */}
       <button
         onClick={handleUpload}
-        className="mb-4 px-4 py-2 bg-green-500 text-white rounded"
+        className={`w-full py-3 px-6 bg-green-600 text-white font-semibold rounded-md hover:bg-green-700 transition-colors duration-300 
+          ${(!imageData || loading || !userId) ? 'opacity-50 cursor-not-allowed' : ''}`}
         disabled={!imageData || loading || !userId}
       >
-        {loading ? 'Uploading...' : 'Upload Image to Supabase'}
+        {loading ? (
+          <div className="flex items-center justify-center">
+            <svg
+              className="animate-spin h-5 w-5 mr-3 text-white"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+              ></circle>
+              <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8v8H4z"
+              ></path>
+            </svg>
+            Uploading...
+          </div>
+        ) : (
+          'Upload Image to Supabase'
+        )}
       </button>
 
+      {/* Copy Success Notification */}
       {copySuccess && (
-        <div className="text-green-600 mb-4">
-          Image link has been copied to your clipboard!
+        <div className="mt-4 p-3 bg-green-100 border border-green-400 text-green-700 rounded-md flex items-center justify-between">
+          <span>Image link has been copied to your clipboard!</span>
+          <svg
+            className="w-5 h-5 text-green-700"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+          </svg>
         </div>
       )}
 
+      {/* Image Link Display */}
       {imageLink && (
-        <div>
-          <p>Image successfully uploaded!</p>
-          <a href={imageLink} target="_blank" rel="noopener noreferrer">
-            Click here to view the image
+        <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-md flex flex-col md:flex-row items-start md:items-center justify-between">
+          <span className="text-blue-700 font-medium">Image successfully uploaded!</span>
+          <a
+            href={imageLink}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-2 md:mt-0 inline-flex items-center px-4 py-2 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700 transition-colors duration-300"
+          >
+            View Image
+            <svg
+              className="w-4 h-4 ml-2"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+            </svg>
           </a>
         </div>
       )}

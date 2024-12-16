@@ -1,6 +1,13 @@
 'use client';
+
 import { useEffect, useState, useRef } from 'react';
 import { createClient } from '@/utils/supabase/client';
+
+type RecipeType = {
+  id: number;
+  name: string;
+  description?: string; // Add other recipe-related fields as needed
+};
 
 type JournalEntryType = {
   id: number;
@@ -10,6 +17,8 @@ type JournalEntryType = {
   water_weight?: number;
   grind_setting?: string;
   overall_time?: number;
+  brew_tools?: string[]; // Brewing tools as an array
+  recipes?: RecipeType; // Nested recipe data
 };
 
 interface GenerateImageProps {
@@ -23,10 +32,7 @@ export default function GenerateImage({ onImageGenerated }: GenerateImageProps) 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
   const [userImageUrl, setUserImageUrl] = useState<string | null>(null);
-
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-  const supabase = createClient(supabaseUrl, supabaseAnonKey);
+  const supabase = createClient();
 
   // Fetch the user ID on mount
   useEffect(() => {
@@ -55,7 +61,17 @@ export default function GenerateImage({ onImageGenerated }: GenerateImageProps) 
     setLoading(true);
     const { data, error } = await supabase
       .from('entries')
-      .select('id, created_at, temperature, coffee_weight, water_weight, grind_setting, overall_time')
+      .select(`
+        id,
+        created_at,
+        temperature,
+        coffee_weight,
+        water_weight,
+        grind_setting,
+        overall_time,
+        brew_tools,
+        recipes ( id, name, description ) // Fetch related recipe data
+      `)
       .eq('userid', userId)
       .order('created_at', { ascending: false });
 
@@ -63,7 +79,7 @@ export default function GenerateImage({ onImageGenerated }: GenerateImageProps) 
       console.error('Error fetching journal entries:', error);
     } else if (data && data.length > 0) {
       console.log('Fetched entries:', data);
-      setEntries(data);
+      setEntries(data as JournalEntryType[]);
       setSelectedEntryId(data[0].id); // Select the latest entry by default
     } else {
       console.warn('No entries found in the database');
@@ -98,9 +114,32 @@ export default function GenerateImage({ onImageGenerated }: GenerateImageProps) 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const imageUrl = URL.createObjectURL(file);
-      setUserImageUrl(imageUrl);
+      const reader = new FileReader();
+      reader.onload = () => {
+        setUserImageUrl(reader.result as string);
+        console.log('Image uploaded and set:', reader.result);
+      };
+      reader.onerror = (error) => {
+        console.error('Error reading the image file:', error);
+      };
+      reader.readAsDataURL(file);
     }
+  };
+
+  const getBrewTools = (brew_tools?: string[] | string): string[] => {
+    if (Array.isArray(brew_tools)) {
+      return brew_tools;
+    } else if (typeof brew_tools === 'string') {
+      try {
+        const parsed = JSON.parse(brew_tools);
+        if (Array.isArray(parsed)) {
+          return parsed;
+        }
+      } catch (e) {
+        console.error('Error parsing brew_tools:', e);
+      }
+    }
+    return [];
   };
 
   const generateImageWithText = () => {
@@ -126,71 +165,122 @@ export default function GenerateImage({ onImageGenerated }: GenerateImageProps) 
     // Clear the canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Choose a random background color
-    const colors = ['#fff8e1', '#e1f5fe', '#f1f8e9', '#fce4ec', '#e8f5e9', '#fff3e0'];
-    const bgColor = colors[Math.floor(Math.random() * colors.length)];
+    // Define colors based on JournalEntry component
+    const headerColor = '#f3f4f6'; // Tailwind's bg-gray-100
+    const textColor = '#374151'; // Tailwind's text-gray-700
+    const labelColor = '#6b7280'; // Tailwind's text-gray-500
+    const lineColor = '#9ca3af'; // Tailwind's text-gray-400
 
     // Fill background
-    ctx.fillStyle = bgColor;
+    ctx.fillStyle = '#ffffff'; // White background
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     // Add Header Rectangle
-    ctx.fillStyle = '#006064';
+    ctx.fillStyle = headerColor;
     ctx.fillRect(0, 0, canvas.width, 60);
 
-    ctx.font = 'bold 24px Arial';
-    ctx.fillStyle = '#ffffff';
+    // Header Text
+    ctx.font = 'bold 28px Segoe UI, Tahoma, Geneva, Verdana, sans-serif';
+    ctx.fillStyle = textColor;
     ctx.textAlign = 'center';
-    ctx.textBaseline = 'alphabetic';
-    ctx.fillText('Coffee Journal Entry', canvas.width / 2, 35);
+    ctx.textBaseline = 'middle';
+    ctx.fillText('Coffee Journal Entry', canvas.width / 2, 30);
 
     // Add Decorative Line
-    ctx.strokeStyle = '#004d40';
-    ctx.lineWidth = 2;
+    ctx.strokeStyle = lineColor;
+    ctx.lineWidth = 1;
     ctx.beginPath();
-    ctx.moveTo(20, 70);
-    ctx.lineTo(canvas.width - 20, 70);
+    ctx.moveTo(20, 65);
+    ctx.lineTo(canvas.width - 20, 65);
     ctx.stroke();
 
     // Define Text Properties for entry details
-    ctx.font = '18px Arial';
-    ctx.fillStyle = '#004d40';
+    ctx.font = '16px Segoe UI, Tahoma, Geneva, Verdana, sans-serif';
+    ctx.fillStyle = textColor;
     ctx.textAlign = 'left';
-    ctx.textBaseline = 'alphabetic';
+    ctx.textBaseline = 'top';
 
     const padding = 20;
-    const lineHeight = 30;
-    let yPosition = 100;
+    const labelX = padding;
+    const valueX = canvas.width / 2 + padding;
+    let yPosition = 80;
+    const lineHeight = 25;
+
+    // Helper to draw labels and values
+    const drawLabelValue = (label: string, value: string, y: number) => {
+      ctx.fillStyle = labelColor;
+      ctx.fillText(label, labelX, y);
+      ctx.fillStyle = textColor;
+      ctx.fillText(value, valueX, y);
+    };
 
     // Display Journal Entry Data
-    ctx.fillText(`Entry Date: ${formatDateTime(entry.created_at)}`, padding, yPosition);
+    drawLabelValue('Entry Date:', formatDateTime(entry.created_at), yPosition);
     yPosition += lineHeight;
-    ctx.fillText(`Temperature: ${entry.temperature !== undefined ? `${entry.temperature}°C` : 'N/A'}`, padding, yPosition);
+    drawLabelValue(
+      'Temperature:',
+      entry.temperature !== undefined ? `${entry.temperature}°C` : 'N/A',
+      yPosition
+    );
     yPosition += lineHeight;
-    ctx.fillText(`Coffee Weight: ${entry.coffee_weight !== undefined ? `${entry.coffee_weight}g` : 'N/A'}`, padding, yPosition);
+    drawLabelValue(
+      'Coffee Weight:',
+      entry.coffee_weight !== undefined ? `${entry.coffee_weight}g` : 'N/A',
+      yPosition
+    );
     yPosition += lineHeight;
-    ctx.fillText(`Water Weight: ${entry.water_weight !== undefined ? `${entry.water_weight}g` : 'N/A'}`, padding, yPosition);
+    drawLabelValue(
+      'Water Weight:',
+      entry.water_weight !== undefined ? `${entry.water_weight}g` : 'N/A',
+      yPosition
+    );
     yPosition += lineHeight;
-    ctx.fillText(`Grind Setting: ${entry.grind_setting || 'N/A'}`, padding, yPosition);
+    drawLabelValue('Grind Setting:', entry.grind_setting || 'N/A', yPosition);
     yPosition += lineHeight;
-    ctx.fillText(`Overall Time: ${entry.overall_time !== undefined ? formatTime(entry.overall_time) : 'N/A'}`, padding, yPosition);
+    drawLabelValue(
+      'Overall Time:',
+      entry.overall_time !== undefined ? formatTime(entry.overall_time) : 'N/A',
+      yPosition
+    );
+    yPosition += lineHeight;
 
+    // Brewing Tools (Conditional)
+    const brewTools = getBrewTools(entry.brew_tools);
+    if (brewTools.length > 0) {
+      ctx.fillStyle = labelColor;
+      ctx.fillText('Brewing Tools:', labelX, yPosition);
+      ctx.fillStyle = textColor;
+      brewTools.forEach((tool, index) => {
+        ctx.fillText(`• ${tool}`, valueX, yPosition + index * lineHeight);
+      });
+      yPosition += brewTools.length * lineHeight;
+    }
+
+    // Recipe Name
+    ctx.fillStyle = labelColor;
+    ctx.fillText('Recipe:', labelX, yPosition);
+    ctx.fillStyle = textColor;
+    ctx.fillText(entry.recipes?.name || 'N/A', valueX, yPosition);
+    yPosition += lineHeight;
+
+    // Optional User Image
     if (userImageUrl) {
       const uploadedImg = new Image();
       uploadedImg.src = userImageUrl;
 
       uploadedImg.onload = () => {
+        console.log('User image loaded successfully.');
         const maxSize = 100; // Maximum dimension for the user's image
         const ratio = Math.min(maxSize / uploadedImg.width, maxSize / uploadedImg.height);
-        
-        // Only scale down if image is larger than maxSize
-        const drawWidth = uploadedImg.width * (ratio < 1 ? ratio : 1);
-        const drawHeight = uploadedImg.height * (ratio < 1 ? ratio : 1);
 
-        // Draw the user's uploaded image in the bottom-right corner
+        // Calculate dimensions while preserving aspect ratio
+        const drawWidth = uploadedImg.width * ratio;
+        const drawHeight = uploadedImg.height * ratio;
+
+        // Draw the user's uploaded image in the bottom-right corner without stretching
         ctx.drawImage(
-          uploadedImg, 
-          canvas.width - drawWidth - padding, 
+          uploadedImg,
+          canvas.width - drawWidth - padding,
           canvas.height - drawHeight - padding,
           drawWidth,
           drawHeight
@@ -199,6 +289,7 @@ export default function GenerateImage({ onImageGenerated }: GenerateImageProps) 
         // Generate image after all drawings are done
         const imageUrl = canvas.toDataURL('image/png');
         onImageGenerated(imageUrl);
+        console.log('Image generated with user image.');
       };
 
       uploadedImg.onerror = () => {
@@ -210,6 +301,7 @@ export default function GenerateImage({ onImageGenerated }: GenerateImageProps) 
       // No uploaded image, just generate the image
       const imageUrl = canvas.toDataURL('image/png');
       onImageGenerated(imageUrl);
+      console.log('Image generated without user image.');
     }
   };
 
@@ -265,7 +357,7 @@ export default function GenerateImage({ onImageGenerated }: GenerateImageProps) 
         ref={canvasRef}
         width={600}
         height={400}
-        style={{ border: '1px solid #ddd', borderRadius: '8px', marginBottom: '20px' }}
+        style={{ border: '1px solid #d1d5db', borderRadius: '8px', marginBottom: '20px' }}
       />
 
       {/* Generate Image Button */}
