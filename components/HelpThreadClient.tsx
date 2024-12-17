@@ -6,8 +6,8 @@ import { createClient } from '@/utils/supabase/client';
 interface Thread {
   id: number;
   contents: string;
-  replys: string[];
-  user_id: string | null; // user_id can now be null
+  replys: string[] | null; // replys can be null
+  user_id: string | null;
   created_at: string;
 }
 
@@ -63,7 +63,10 @@ const HelpThreadClient = ({ initialThreads }: HelpThreadClientProps) => {
         return;
       }
 
-      const threads = threadsData as Thread[];
+      const threads = (threadsData as Thread[]).map((thread) => ({
+        ...thread,
+        replys: thread.replys || [], // Ensure replys is always an array
+      }));
 
       // Extract user_ids from threads (filter out null)
       const userIds = Array.from(new Set(threads.map((t) => t.user_id).filter(Boolean))) as string[];
@@ -109,7 +112,7 @@ const HelpThreadClient = ({ initialThreads }: HelpThreadClientProps) => {
       const newThreadObj = {
         contents: newThread,
         replys: [],
-        user_id: currentUser.id, // user_id should not be null here since currentUser is defined
+        user_id: currentUser.id,
       };
 
       try {
@@ -119,8 +122,12 @@ const HelpThreadClient = ({ initialThreads }: HelpThreadClientProps) => {
           console.error('Error inserting thread into Supabase:', error);
           setErrorMessage('Failed to create the thread. Please try again.');
         } else if (data && data.length > 0) {
-          const insertedThread = data[0] as Thread;
-          // Try to update the userFullNameMap (in case this user wasn't in the map yet)
+          const insertedThread = {
+            ...data[0],
+            replys: data[0].replys || [],
+          } as Thread;
+          
+          // Try to update the userFullNameMap
           if (insertedThread.user_id && !userFullNameMap[insertedThread.user_id]) {
             const { data: profileData } = await supabase
               .from('profiles')
@@ -153,7 +160,8 @@ const HelpThreadClient = ({ initialThreads }: HelpThreadClientProps) => {
   const addReply = async (threadId: number, replyText: string) => {
     const updatedThreads = threads.map((thread) => {
       if (thread.id === threadId) {
-        return { ...thread, replys: [...thread.replys, replyText] };
+        const newReplys = Array.isArray(thread.replys) ? [...thread.replys, replyText] : [replyText];
+        return { ...thread, replys: newReplys };
       }
       return thread;
     });
@@ -191,7 +199,7 @@ const HelpThreadClient = ({ initialThreads }: HelpThreadClientProps) => {
       return;
     }
 
-    // Check if the current user is the creator of the thread
+    // Check if the current user is the creator
     if (currentUser.id !== threadToDelete.user_id) {
       setErrorMessage('You are not authorized to delete this thread.');
       return;
@@ -219,7 +227,6 @@ const HelpThreadClient = ({ initialThreads }: HelpThreadClientProps) => {
 
       {errorMessage && <p className="text-red-500 mb-4">{errorMessage}</p>}
 
-      {/* Show the "Create Thread" button only if the user is logged in */}
       {currentUser ? (
         <button
           onClick={() => setModalOpen(true)}
@@ -231,7 +238,6 @@ const HelpThreadClient = ({ initialThreads }: HelpThreadClientProps) => {
         <p className="mb-4">Please log in to create a thread.</p>
       )}
 
-      {/* Modal for creating a new thread */}
       {modalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
           <div className="bg-white p-6 rounded shadow-lg max-w-md w-full">
@@ -269,47 +275,51 @@ const HelpThreadClient = ({ initialThreads }: HelpThreadClientProps) => {
         </div>
       )}
 
-      {/* Display threads in a grid layout */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {threads.map((thread) => (
-          <div
-            key={thread.id}
-            className="border border-gray-300 bg-white p-4 rounded shadow-sm"
-          >
-            <h2 className="text-lg font-semibold mb-2">{thread.contents}</h2>
-            <p className="text-sm text-gray-500 mb-2">
-              Posted by{' '}
-              {thread.user_id
-                ? userFullNameMap[thread.user_id] || 'Unknown User'
-                : 'Unknown User'}{' '}
-              on {new Date(thread.created_at).toLocaleString()}
-            </p>
+        {threads.map((thread) => {
+          const replies = thread.replys || [];
+          return (
+            <div
+              key={thread.id}
+              className="border border-gray-300 bg-white p-4 rounded shadow-sm"
+            >
+              <h2 className="text-lg font-semibold mb-2">{thread.contents}</h2>
+              <p className="text-sm text-gray-500 mb-2">
+                Posted by{' '}
+                {thread.user_id
+                  ? userFullNameMap[thread.user_id] || 'Unknown User'
+                  : 'Unknown User'}{' '}
+                on {new Date(thread.created_at).toLocaleString()}
+              </p>
 
-            {currentUser?.id === thread.user_id && (
-              <button
-                onClick={() => deleteThread(thread.id)}
-                className="bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600 text-sm mb-2"
-              >
-                Delete Thread
-              </button>
-            )}
-
-            <ReplySection threadId={thread.id} addReply={addReply} />
-
-            <div className="mt-4">
-              <h3 className="font-semibold mb-1">Replies:</h3>
-              {thread.replys.length > 0 ? (
-                <ul className="list-disc ml-6 space-y-1">
-                  {thread.replys.map((reply, index) => (
-                    <li key={index} className="text-sm">{reply}</li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="text-sm text-gray-500">No replies yet.</p>
+              {currentUser?.id === thread.user_id && (
+                <button
+                  onClick={() => deleteThread(thread.id)}
+                  className="bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600 text-sm mb-2"
+                >
+                  Delete Thread
+                </button>
               )}
+
+              <ReplySection threadId={thread.id} addReply={addReply} />
+
+              <div className="mt-4">
+                <h3 className="font-semibold mb-1">Replies:</h3>
+                {replies.length > 0 ? (
+                  <ul className="list-disc ml-6 space-y-1">
+                    {replies.map((reply, index) => (
+                      <li key={index} className="text-sm">
+                        {reply}
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-sm text-gray-500">No replies yet.</p>
+                )}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
