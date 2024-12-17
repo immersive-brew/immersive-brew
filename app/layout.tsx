@@ -81,7 +81,6 @@ const CoffeeLogo = () => (
     </svg>
 );
 
-
 export const runtime = 'edge';
 
 export default async function RootLayout({
