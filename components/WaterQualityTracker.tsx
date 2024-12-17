@@ -5,6 +5,50 @@ import { motion } from 'framer-motion';
 import Image from 'next/image';
 import Modal from 'react-modal';
 
+// Define water types with images
+const waterTypes = [
+  {
+    name: 'Third Wave Water (light roast profile)',
+    image: '/images/third_wave_water.jpg',
+  },
+  {
+    name: 'Coffee Water',
+    image: '/images/coffee_water.jpg',
+  },
+  {
+    name: 'gcwater',
+    image: '/images/gcwater.jpg',
+  },
+  {
+    name: 'Aquacode',
+    image: '/images/aquacode.jpg',
+  },
+  {
+    name: 'Perfect Coffee Water',
+    image: '/images/perfect_coffee_water.jpg',
+  },
+  {
+    name: 'Custom Water',
+    image: '/images/custom_water.jpg',
+  },
+];
+
+// Create a dictionary for quick lookup of images by water type name
+const waterTypeImages: { [key: string]: string } = {};
+waterTypes.forEach((wt) => {
+  waterTypeImages[wt.name] = wt.image;
+});
+
+// Popular minerals for custom water
+const minerals = [
+  'Calcium Chloride',
+  'Magnesium Sulfate',
+  'Sodium Bicarbonate',
+  'Potassium Bicarbonate',
+  'Epsom Salt',
+  'Gypsum',
+];
+
 export default function WaterQualityTracker() {
   const [userId, setUserId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -16,10 +60,14 @@ export default function WaterQualityTracker() {
   const [modalIsOpen, setModalIsOpen] = useState(false);
   const [showResourcesStep, setShowResourcesStep] = useState(true);
 
+  const [waterEntries, setWaterEntries] = useState<any[]>([]);
+  const [editingEntryId, setEditingEntryId] = useState<string | number | null>(null);
+  const [editingPacketCount, setEditingPacketCount] = useState<number | null>(null);
+
   // Initialize Supabase client
   const supabase = createClient();
 
-  // Fetch the user ID when the component mounts
+  // Fetch user ID on mount
   useEffect(() => {
     const fetchUserId = async () => {
       const {
@@ -27,52 +75,99 @@ export default function WaterQualityTracker() {
         error,
       } = await supabase.auth.getUser();
       if (error) console.error('Error fetching user:', error.message);
-      else if (user) setUserId(user.id);
-      else console.log('No user signed in');
+      else if (user) {
+        setUserId(user.id);
+      } else console.log('No user signed in');
     };
 
     fetchUserId();
   }, [supabase]);
 
-  // Water types with images
-  const waterTypes = [
-    {
-      name: 'Third Wave Water (light roast profile)',
-      image: '/images/third_wave_water.jpg',
-    },
-    {
-      name: 'Coffee Water',
-      image: '/images/coffee_water.jpg',
-    },
-    {
-      name: 'gcwater',
-      image: '/images/gcwater.jpg',
-    },
-    {
-      name: 'Aquacode',
-      image: '/images/aquacode.jpg',
-    },
-    {
-      name: 'Perfect Coffee Water',
-      image: '/images/perfect_coffee_water.jpg',
-    },
-    {
-      name: 'Custom Water',
-      image: '/images/custom_water.jpg',
-    },
-  ];
+  // Fetch existing water entries for the user
+  useEffect(() => {
+    const fetchWaterEntries = async () => {
+      if (!userId) return;
+      const { data, error } = await supabase
+        .from('water_tracker')
+        .select('*')
+        .eq('user_id', userId);
 
-  // Popular minerals for custom water
-  const minerals = [
-    'Calcium Chloride',
-    'Magnesium Sulfate',
-    'Sodium Bicarbonate',
-    'Potassium Bicarbonate',
-    'Epsom Salt',
-    'Gypsum',
-  ];
+      if (error) {
+        console.error('Error fetching water entries:', error.message);
+      } else {
+        setWaterEntries(data || []);
+      }
+    };
+    fetchWaterEntries();
+  }, [userId, supabase]);
 
-  // Handle water type selection
+  const refreshEntries = async () => {
+    if (!userId) return;
+    const { data, error } = await supabase
+      .from('water_tracker')
+      .select('*')
+      .eq('user_id', userId);
+
+    if (error) {
+      console.error('Error fetching water entries:', error.message);
+    } else {
+      setWaterEntries(data || []);
+    }
+  };
+
+  // Handle inline edit of existing water entry
+  const handleEditEntry = (entry: any) => {
+    setEditingEntryId(entry.id);
+    setEditingPacketCount(entry.packet_count);
+  };
+
+  const handleIncrement = () => {
+    if (editingPacketCount !== null) {
+      setEditingPacketCount(editingPacketCount + 1);
+    }
+  };
+
+  const handleDecrement = () => {
+    if (editingPacketCount !== null && editingPacketCount > 0) {
+      setEditingPacketCount(editingPacketCount - 1);
+    }
+  };
+
+  const handleSaveEntry = async (entryId: number) => {
+    if (editingPacketCount === null) return;
+    const { error } = await supabase
+      .from('water_tracker')
+      .update({ packet_count: editingPacketCount })
+      .eq('id', entryId);
+
+    if (error) {
+      console.error('Error updating entry:', error.message);
+      setMessage('Failed to update entry.');
+    } else {
+      setMessage('Entry updated successfully.');
+      setEditingEntryId(null);
+      setEditingPacketCount(null);
+      refreshEntries();
+    }
+  };
+
+  // Handle delete entry
+  const handleDeleteEntry = async (entryId: number) => {
+    const { error } = await supabase
+      .from('water_tracker')
+      .delete()
+      .eq('id', entryId);
+
+    if (error) {
+      console.error('Error deleting entry:', error.message);
+      setMessage('Failed to delete entry.');
+    } else {
+      setMessage('Entry deleted successfully.');
+      refreshEntries();
+    }
+  };
+
+  // Handle water type selection for main modal
   const handleWaterChoice = (waterType: any) => {
     setSelectedWaterType(waterType);
     setPacketCount(null);
@@ -82,12 +177,12 @@ export default function WaterQualityTracker() {
     setModalIsOpen(true);
   };
 
-  // Proceed to the data input step
+  // Proceed to the data input step in main modal
   const handleContinue = () => {
     setShowResourcesStep(false);
   };
 
-  // Handle submission to Supabase
+  // Submit a new water entry from main modal
   const handleSubmit = async () => {
     if (!userId) {
       setMessage('Please log in to track water choices.');
@@ -112,7 +207,7 @@ export default function WaterQualityTracker() {
       dataToInsert.minerals_used = customMinerals;
     }
 
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from('water_tracker')
       .insert([dataToInsert]);
 
@@ -127,6 +222,8 @@ export default function WaterQualityTracker() {
       setPacketCount(null);
       setWaterAmount(null);
       setCustomMinerals([]);
+      // Refresh entries
+      refreshEntries();
     }
     setLoading(false);
   };
@@ -137,12 +234,13 @@ export default function WaterQualityTracker() {
       top: '50%',
       left: '50%',
       right: 'auto',
-      bottom: 'auto',
+      bottom: 'auto' as 'auto',
       transform: 'translate(-50%, -50%)',
       borderRadius: '15px',
       padding: '30px',
       width: '90%',
       maxWidth: '500px',
+      fontFamily: 'sans-serif',
     },
   };
 
@@ -150,140 +248,122 @@ export default function WaterQualityTracker() {
   const packetOptions = Array.from({ length: 11 }, (_, i) => i); // 0 to 10
   const waterAmountOptions = Array.from({ length: 10 }, (_, i) => (i + 1) * 0.5); // 0.5 to 5.0 in increments of 0.5
 
-  // Inline styles object
-  const styles = {
-    container: {
-      display: 'flex',
-      flexDirection: 'column' as 'column',
-      alignItems: 'center',
-      padding: '30px',
-    },
-    title: {
-      fontSize: '2em',
-      marginBottom: '20px',
-    },
-    message: {
-      color: 'green',
-      marginBottom: '20px',
-    },
-    waterGrid: {
-      display: 'grid',
-      gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
-      gap: '20px',
-      width: '100%',
-      maxWidth: '800px',
-    },
-    waterCard: {
-      display: 'flex',
-      flexDirection: 'column' as 'column',
-      alignItems: 'center',
-      cursor: 'pointer',
-    },
-    waterImage: {
-      borderRadius: '10px',
-    },
-    modalContent: {
-      display: 'flex',
-      flexDirection: 'column' as 'column',
-      alignItems: 'center',
-    },
-    modalImage: {
-      borderRadius: '10px',
-      marginBottom: '20px',
-    },
-    label: {
-      width: '100%',
-      marginBottom: '15px',
-      fontWeight: 'bold' as 'bold',
-    },
-    select: {
-      width: '100%',
-      padding: '10px',
-      marginTop: '5px',
-      fontSize: '1em',
-      backgroundColor: '#fff',
-      border: '1px solid #ccc',
-      borderRadius: '5px',
-      color: '#333',
-    },
-    mineralsSection: {
-      width: '100%',
-      marginTop: '20px',
-    },
-    checkboxLabel: {
-      display: 'flex',
-      alignItems: 'center',
-      marginBottom: '10px',
-    },
-    exampleText: {
-      fontStyle: 'italic',
-      color: '#555',
-      marginTop: '10px',
-    },
-    modalButtons: {
-      display: 'flex',
-      justifyContent: 'space-between',
-      width: '100%',
-      marginTop: '30px',
-    },
-    submitButton: {
-      padding: '10px 20px',
-      backgroundColor: '#0070f3',
-      color: 'white',
-      border: 'none',
-      borderRadius: '5px',
-      cursor: 'pointer',
-    },
-    submitButtonDisabled: {
-      backgroundColor: '#999',
-      cursor: 'not-allowed',
-    },
-    cancelButton: {
-      padding: '10px 20px',
-      backgroundColor: '#eaeaea',
-      color: 'black',
-      border: 'none',
-      borderRadius: '5px',
-      cursor: 'pointer',
-    },
-    videoContainer: {
-      width: '100%',
-      marginBottom: '20px',
-    },
-  };
-
   return (
-    <div style={styles.container}>
+    <div className="flex flex-col items-center px-6 py-8 font-sans">
+      {message && <p className="text-green-700 mb-4">{message}</p>}
+
+      {/* Top Module: Display user's water tracking entries */}
+      <div className="w-full max-w-4xl mb-8">
+        <h3 className="text-2xl font-bold mb-4">Your Water Tracking</h3>
+        {waterEntries.length === 0 ? (
+          <p className="text-gray-600">No entries yet. Select a water type below to add one.</p>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            {waterEntries.map((entry) => {
+              const image = waterTypeImages[entry.water_type] || '/images/custom_water.jpg';
+              return (
+                <div key={entry.id} className="bg-white shadow rounded-lg p-4 flex flex-col">
+                  <div className="w-full h-32 relative mb-4">
+                    <Image
+                      src={image}
+                      alt={entry.water_type}
+                      fill
+                      className="object-cover rounded-md"
+                    />
+                  </div>
+                  <h4 className="text-lg font-semibold mb-2">{entry.water_type}</h4>
+                  <div className="flex items-center justify-between mb-3">
+                    {editingEntryId === entry.id ? (
+                      <div className="flex items-center space-x-2">
+                        <button
+                          onClick={handleDecrement}
+                          className="px-2 py-1 bg-gray-300 text-gray-700 rounded hover:bg-gray-400"
+                        >
+                          -
+                        </button>
+                        <span className="text-gray-700">{editingPacketCount}</span>
+                        <button
+                          onClick={handleIncrement}
+                          className="px-2 py-1 bg-gray-300 text-gray-700 rounded hover:bg-gray-400"
+                        >
+                          +
+                        </button>
+                        <button
+                          className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
+                          onClick={() => handleSaveEntry(entry.id)}
+                        >
+                          Save
+                        </button>
+                        <button
+                          className="px-3 py-1 bg-gray-300 text-gray-700 rounded hover:bg-gray-400"
+                          onClick={() => {
+                            setEditingEntryId(null);
+                            setEditingPacketCount(null);
+                          }}
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    ) : (
+                      <>
+                        <span className="text-gray-700">Packets: {entry.packet_count}</span>
+                        <div className="flex space-x-2">
+                          <button
+                            className="text-blue-500 hover:text-blue-700"
+                            onClick={() => handleEditEntry(entry)}
+                            title="Edit"
+                          >
+                            ✏️
+                          </button>
+                          <button
+                            className="text-red-500 hover:text-red-700"
+                            onClick={() => handleDeleteEntry(entry.id)}
+                            title="Delete"
+                          >
+                            🗑️
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
       <motion.h2
         initial={{ y: -50 }}
         animate={{ y: 0 }}
         transition={{ duration: 0.5 }}
-        style={styles.title}
+        className="text-3xl font-bold mb-6"
       >
         Track Your Water Quality
       </motion.h2>
-      {message && <p style={styles.message}>{message}</p>}
 
-      <div style={styles.waterGrid}>
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6 w-full max-w-4xl">
         {waterTypes.map((type) => (
           <motion.div
             key={type.name}
-            style={styles.waterCard}
-            whileHover={{ scale: 1.05 }}
+            className="bg-white shadow rounded-lg p-4 flex flex-col items-center cursor-pointer hover:shadow-lg transition-shadow"
+            whileHover={{ scale: 1.03 }}
             onClick={() => handleWaterChoice(type)}
           >
-            <Image
-              src={type.image}
-              alt={type.name}
-              width={150}
-              height={150}
-              style={styles.waterImage}
-            />
-            <p>{type.name}</p>
+            <div className="w-full h-32 relative mb-2">
+              <Image
+                src={type.image}
+                alt={type.name}
+                fill
+                className="object-cover rounded-md"
+              />
+            </div>
+            <p className="text-center text-gray-800 font-semibold">{type.name}</p>
           </motion.div>
         ))}
       </div>
 
+      {/* Main Modal */}
       <Modal
         isOpen={modalIsOpen}
         onRequestClose={() => setModalIsOpen(false)}
@@ -292,21 +372,22 @@ export default function WaterQualityTracker() {
         ariaHideApp={false}
       >
         {selectedWaterType && (
-          <div style={styles.modalContent}>
-            <h2>{selectedWaterType.name}</h2>
-            <Image
-              src={selectedWaterType.image}
-              alt={selectedWaterType.name}
-              width={200}
-              height={200}
-              style={styles.modalImage}
-            />
+          <div className="flex flex-col items-center font-sans">
+            <h2 className="text-xl font-bold mb-4">{selectedWaterType.name}</h2>
+            <div className="w-32 h-32 relative mb-4">
+              <Image
+                src={selectedWaterType.image}
+                alt={selectedWaterType.name}
+                fill
+                className="object-cover rounded-md"
+              />
+            </div>
 
             {showResourcesStep ? (
               <>
                 {/* Additional Resources Step */}
-                <div style={styles.videoContainer}>
-                  {/* Embed your video or other resources here */}
+                <div className="w-full mb-4">
+                  {/* Example video */}
                   <iframe
                     width="100%"
                     height="200"
@@ -317,17 +398,19 @@ export default function WaterQualityTracker() {
                     allowFullScreen
                   ></iframe>
                 </div>
-                <p>Learn about the best practices for using {selectedWaterType.name}.</p>
-                <div style={styles.modalButtons}>
+                <p className="text-gray-700 text-center mb-4">
+                  Learn about the best practices for using {selectedWaterType.name}.
+                </p>
+                <div className="flex justify-between w-full">
                   <button
                     onClick={handleContinue}
-                    style={styles.submitButton}
+                    className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
                   >
                     Continue
                   </button>
                   <button
                     onClick={() => setModalIsOpen(false)}
-                    style={styles.cancelButton}
+                    className="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400"
                   >
                     Cancel
                   </button>
@@ -336,39 +419,43 @@ export default function WaterQualityTracker() {
             ) : (
               <>
                 {/* Input Fields Step */}
-                <label style={styles.label}>
-                  Number of Packets:
-                  <select
-                    style={styles.select}
-                    value={packetCount !== null ? packetCount : ''}
-                    onChange={(e) => setPacketCount(Number(e.target.value))}
-                  >
-                    <option value="" disabled>Select an option</option>
-                    {packetOptions.map((opt) => (
-                      <option key={opt} value={opt}>{opt}</option>
-                    ))}
-                  </select>
-                </label>
+                <div className="w-full mb-4">
+                  <label className="block font-bold mb-2">
+                    Number of Packets:
+                    <select
+                      className="w-full border rounded p-2 mt-1"
+                      value={packetCount !== null ? packetCount : ''}
+                      onChange={(e) => setPacketCount(Number(e.target.value))}
+                    >
+                      <option value="" disabled>Select an option</option>
+                      {packetOptions.map((opt) => (
+                        <option key={opt} value={opt}>{opt}</option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
 
-                <label style={styles.label}>
-                  Amount of Water (in liters):
-                  <select
-                    style={styles.select}
-                    value={waterAmount !== null ? waterAmount : ''}
-                    onChange={(e) => setWaterAmount(Number(e.target.value))}
-                  >
-                    <option value="" disabled>Select an option</option>
-                    {waterAmountOptions.map((amt) => (
-                      <option key={amt} value={amt}>{amt} L</option>
-                    ))}
-                  </select>
-                </label>
+                <div className="w-full mb-4">
+                  <label className="block font-bold mb-2">
+                    Amount of Water (in liters):
+                    <select
+                      className="w-full border rounded p-2 mt-1"
+                      value={waterAmount !== null ? waterAmount : ''}
+                      onChange={(e) => setWaterAmount(Number(e.target.value))}
+                    >
+                      <option value="" disabled>Select an option</option>
+                      {waterAmountOptions.map((amt) => (
+                        <option key={amt} value={amt}>{amt} L</option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
 
                 {selectedWaterType.name === 'Custom Water' && (
-                  <div style={styles.mineralsSection}>
-                    <h3>Select Minerals Used:</h3>
+                  <div className="w-full mb-4">
+                    <h3 className="font-bold mb-2">Select Minerals Used:</h3>
                     {minerals.map((mineral) => (
-                      <label key={mineral} style={styles.checkboxLabel}>
+                      <label key={mineral} className="flex items-center mb-2">
                         <input
                           type="checkbox"
                           value={mineral}
@@ -382,23 +469,22 @@ export default function WaterQualityTracker() {
                               );
                             }
                           }}
+                          className="mr-2"
                         />
                         {mineral}
                       </label>
                     ))}
-                    <p style={styles.exampleText}>
-                      Example: For a balanced brew, you might use Calcium Chloride
-                      and Magnesium Sulfate.
+                    <p className="italic text-sm text-gray-600 mt-2">
+                      Example: For a balanced brew, you might use Calcium Chloride and Magnesium Sulfate.
                     </p>
                   </div>
                 )}
-                <div style={styles.modalButtons}>
+                <div className="flex justify-between w-full mt-4">
                   <button
                     onClick={handleSubmit}
-                    style={{
-                      ...styles.submitButton,
-                      ...(loading ? styles.submitButtonDisabled : {}),
-                    }}
+                    className={`px-4 py-2 text-white rounded ${
+                      loading ? 'bg-gray-500' : 'bg-blue-500 hover:bg-blue-600'
+                    }`}
                     disabled={loading}
                   >
                     {loading ? 'Submitting...' : 'Submit'}
@@ -408,7 +494,7 @@ export default function WaterQualityTracker() {
                       setModalIsOpen(false);
                       setShowResourcesStep(true);
                     }}
-                    style={styles.cancelButton}
+                    className="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400"
                   >
                     Cancel
                   </button>
