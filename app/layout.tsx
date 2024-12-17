@@ -36,47 +36,45 @@ const CoffeeLogo = () => (
     <svg
         width="50"
         height="50"
-        viewBox="0 0 1024 1024"
+        viewBox="0 0 100 100"
         className="text-[#2c1010] transition-transform group-hover:scale-110"
         xmlns="http://www.w3.org/2000/svg"
     >
         {/* Coffee Cup */}
-        <path
-            d="M800 832H224c-35.346 0-64-28.654-64-64V416c0-35.346 28.654-64 64-64h576c35.346 0 64 28.654 64 64v352c0 35.346-28.654 64-64 64z"
-            fill="currentColor"
-            stroke="currentColor"
-            strokeWidth="20"
-            strokeLinejoin="round"
+        <path 
+            d="M30 70 
+               Q50 80, 70 70 
+               L75 40 
+               Q77 35, 72 35 
+               L28 35 
+               Q23 35, 25 40 Z" 
+            fill="currentColor" 
+            stroke="currentColor" 
+            strokeWidth="3"
         />
-        {/* Handle */}
-        <path
-            d="M800 512c0 88.366-71.634 160-160 160"
-            stroke="currentColor"
-            strokeWidth="20"
-            fill="none"
-            strokeLinecap="round"
+        
+        {/* Cup Handle */}
+        <path 
+            d="M75 45 
+               Q80 47, 80 52 
+               Q80 57, 75 59" 
+            fill="none" 
+            stroke="currentColor" 
+            strokeWidth="3"
         />
-        {/* Steam Lines */}
-        <path
-            d="M300 200c0-40 40-40 40 0s-40 40-40 0"
-            stroke="currentColor"
-            strokeWidth="20"
-            fill="none"
-            strokeLinecap="round"
-        />
-        <path
-            d="M400 150c0-40 40-40 40 0s-40 40-40 0"
-            stroke="currentColor"
-            strokeWidth="20"
-            fill="none"
-            strokeLinecap="round"
-        />
-        <path
-            d="M500 200c0-40 40-40 40 0s-40 40-40 0"
-            stroke="currentColor"
-            strokeWidth="20"
-            fill="none"
-            strokeLinecap="round"
+        
+        {/* Steam */}
+        <path 
+            d="M40 25 
+               Q42 20, 40 15 
+               M45 25 
+               Q47 20, 45 15 
+               M50 25 
+               Q52 20, 50 15" 
+            fill="none" 
+            stroke="currentColor" 
+            strokeWidth="2"
+            opacity="0.7"
         />
     </svg>
 );
