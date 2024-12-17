@@ -38,7 +38,7 @@ export default async function Page() {
 
       {/* Profile Form */}
       <div className="flex flex-col items-center">
-        <ProfileForm />
+        <ProfileForm profile={profile}/>
       </div>
 
       {/* Delete Account Section */}
