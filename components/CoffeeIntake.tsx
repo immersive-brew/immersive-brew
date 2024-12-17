@@ -31,7 +31,7 @@ export default function CoffeeIntake() {
     const { data, error } = await supabase
       .from("entries")
       .select("coffee_weight, created_at")
-      .eq("user_id", userId) // Filter by the logged-in user's ID
+      .eq("userid", userId) // Filter by the logged-in user's ID
       .gte("created_at", new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()); // Filter by the last 24 hours
 
     if (error) {
