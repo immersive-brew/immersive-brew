@@ -72,6 +72,22 @@ const BrewTimer: React.FC<BrewTimerProps> = ({
     fetchUser();
   }, []);
 
+  // Coffee Fill Animation
+  useEffect(() => {
+    if (isActive) {
+      const stageDuration = stages[currentStage].duration;
+      coffeeFillControls.start({
+        height: "100%",
+        transition: {
+          duration: stageDuration,
+          ease: "easeInOut",
+        },
+      });
+    } else {
+      coffeeFillControls.set({ height: 0 });
+    }
+  }, [isActive, currentStage, coffeeFillControls, stages]);
+
   // Timer logic
   useEffect(() => {
     let timer: NodeJS.Timeout;
@@ -86,6 +102,9 @@ const BrewTimer: React.FC<BrewTimerProps> = ({
             const next = currentStage + 1;
             setCurrentStage(next);
             setTimeLeft(stages[next].duration);
+            
+            // Reset coffee fill for new stage
+            coffeeFillControls.set({ height: 0 });
           } else {
             // After last stage, just set timeLeft to 0 (brew done)
             setTimeLeft(0);
@@ -97,33 +116,21 @@ const BrewTimer: React.FC<BrewTimerProps> = ({
     return () => clearInterval(timer);
   }, [isActive, timeLeft, currentStage, stages]);
 
-  // Animate the circle outline each second
+  // Timer Animation
   useEffect(() => {
     if (isActive) {
       const fraction = timeLeft / stages[currentStage].duration;
       outlineControls.start({
-        strokeDashoffset: circumference * (1 - fraction),
-        transition: { duration: 0.5, ease: "linear" },
+        strokeDashoffset: circumference * fraction,
+        transition: {
+          duration: 1,
+          ease: "linear",
+        },
       });
     } else {
-      // Reset when not active
       outlineControls.set({ strokeDashoffset: circumference });
     }
   }, [isActive, timeLeft, currentStage, stages, outlineControls, circumference]);
-
-  // Animate the coffee fill only during the first stage
-  useEffect(() => {
-    if (isActive && currentStage === 0) {
-      // Scale from 0 to 1 over the duration of the first stage
-      coffeeFillControls.start({
-        scaleY: 1,
-        transition: { duration: stages[0].duration, ease: "easeInOut" },
-      });
-    } else if (!isActive || currentStage !== 0) {
-      // Reset if not active or after moving past first stage
-      coffeeFillControls.set({ scaleY: 0 });
-    }
-  }, [isActive, currentStage, coffeeFillControls, stages]);
 
   const startTimer = () => {
     if (!user) return; // Ensure user is loaded before starting
@@ -136,7 +143,7 @@ const BrewTimer: React.FC<BrewTimerProps> = ({
     setCurrentStage(0);
     setTimeLeft(stages[0].duration);
     setOverallTime(0);
-    coffeeFillControls.set({ scaleY: 0 });
+    coffeeFillControls.set({ height: 0 });
     outlineControls.set({ strokeDashoffset: circumference });
   };
 
@@ -261,12 +268,16 @@ const BrewTimer: React.FC<BrewTimerProps> = ({
               {/* Coffee Fill */}
               <motion.rect
                 x="21"
-                y="65"
+                y="20"
                 width="58"
-                height="45"
-                style={{ originY: "100%", fill: "#6F4E37" }}
+                height="55"
+                style={{ 
+                  originY: "100%", 
+                  backgroundColor: "#6F4E37", 
+                  overflow: "hidden" 
+                }}
+                initial={{ height: 0 }}
                 animate={coffeeFillControls}
-                initial={{ scaleY: 0 }}
               />
             </svg>
           </div>

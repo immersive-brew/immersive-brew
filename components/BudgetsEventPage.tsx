@@ -29,13 +29,13 @@ const BudgetEventPage = () => {
                         title: 'Hario v60 (plastic)',
                         cost: '$10',
                         description: 'Cannot go wrong with a classic.',
-                        videoUrl: 'https://www.youtube.com/embed/your_video_id1'
+                        videoUrl: 'https://www.youtube.com/embed/PUufsQ-nBgQ?si=EUxA1PRxsTpJQgE9'
                     },
                     {
                         title: 'Aeropress',
                         cost: '$40',
                         description: 'Truely a modern classic device with unparrallelled ease of use.',
-                        videoUrl: 'https://www.youtube.com/embed/your_video_id2'
+                        videoUrl: 'https://www.youtube.com/embed/tRIX9G7D_9Q?si=0Ch2wrrjM9Ge7jwG'
                     }
                 ],
                 grinder: [
@@ -43,13 +43,13 @@ const BudgetEventPage = () => {
                         title: 'TIMEMORE Chestnut C2',
                         cost: '$60',
                         description: 'Bang for your buck device for filter coffee productions.',
-                        videoUrl: 'https://www.youtube.com/embed/your_video_id3'
+                        videoUrl: 'https://www.youtube.com/embed/WEdONli_I8c?si=b9BX5mVcsNcF_PHR'
                     },
                     {
                         title: 'Kinggrinder K6',
                         cost: '$100',
                         description: 'A capable device amazing for filter coffee, but has espresso capabilities built-in.',
-                        videoUrl: 'https://www.youtube.com/embed/your_video_id4'
+                        videoUrl: 'https://www.youtube.com/embed/3hAgWubvdKs?si=fOcYqe2dxJ6EZGp_'
                     }
                 ]
             }
@@ -65,13 +65,13 @@ const BudgetEventPage = () => {
                         title: 'Aeropress',
                         cost: '$40',
                         description: 'It is really that good.',
-                        videoUrl: 'https://www.youtube.com/embed/your_video_id2'
+                        videoUrl: 'https://www.youtube.com/embed/tRIX9G7D_9Q?si=0Ch2wrrjM9Ge7jwG'
                     },
                     {
                         title: 'Chemex',
                         cost: '$50',
                         description: 'A unique take on a classic.',
-                        videoUrl: 'https://www.youtube.com/embed/your_video_id6'
+                        videoUrl: 'https://www.youtube.com/embed/_44o-lCopNU?si=SI94PWFOCTM63t-c'
                     }
                 ],
                 grinder: [
@@ -79,13 +79,13 @@ const BudgetEventPage = () => {
                         title: 'Baratza Encore',
                         cost: '$150',
                         description: 'Best Bang for your Buck electric grinder.',
-                        videoUrl: 'https://www.youtube.com/embed/your_video_id7'
+                        videoUrl: 'https://www.youtube.com/embed/kRrzStroKzs?si=ZviXhheXK6-Enc7h'
                     },
                     {
                         title: 'Fellow Opus',
                         cost: '$195',
                         description: 'The aestheic answer to coffee grinding.',
-                        videoUrl: 'https://www.youtube.com/embed/your_video_id8'
+                        videoUrl: 'https://www.youtube.com/embed/lHNI-vTdBRQ?si=kCn71tOp91IYIT0l'
                     }
                 ]
             }
@@ -101,13 +101,13 @@ const BudgetEventPage = () => {
                         title: 'Breville Bambino',
                         cost: '$300',
                         description: 'The best step into Espresso creations.',
-                        videoUrl: 'https://www.youtube.com/embed/your_video_id9'
+                        videoUrl: 'https://www.youtube.com/embed/mjrh2jhoqwY?si=HC-RP2VlBnVuru3U'
                     },
                     {
                         title: 'Rancilio Silvia',
                         cost: '$900',
                         description: 'The most elite starter espresso device on the market.',
-                        videoUrl: 'https://www.youtube.com/embed/your_video_id10'
+                        videoUrl: 'https://www.youtube.com/embed/rFe5-OcFq80?si=OALMFGE1GVbhhG5B'
                     }
                 ],
                 grinder: [
@@ -115,13 +115,13 @@ const BudgetEventPage = () => {
                         title: 'Fellow Ode Pro',
                         cost: '$400',
                         description: 'One of the best in the world.',
-                        videoUrl: 'https://www.youtube.com/embed/your_video_id11'
+                        videoUrl: 'https://www.youtube.com/embed/rgC6JipvV48?si=gIxLJpI3Oi2tcx7i'
                     },
                     {
                         title: 'Niche Zero',
                         cost: '$650',
                         description: 'Produces the best value from bean to cup.',
-                        videoUrl: 'https://www.youtube.com/embed/your_video_id12'
+                        videoUrl: 'https://www.youtube.com/embed/Lk1s035-380?si=lOOZLOumyjHU3cgP'
                     }
                 ]
             }

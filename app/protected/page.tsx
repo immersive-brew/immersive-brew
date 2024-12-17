@@ -1,5 +1,6 @@
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
+import Notification from "@/components/Notification";
 import RecipeRandomizer from "@/components/RecipeRandomizer";
 
 export default async function ProtectedPage() {
@@ -15,6 +16,7 @@ export default async function ProtectedPage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-[#ffe6cc] text-[#4a3f35]">
+      <Notification />
       {/* Hero Section */}
       <header
         className=""

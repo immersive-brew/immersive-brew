@@ -7,7 +7,7 @@ import ManualEntryForm from '@/components/ManualEntryForm';
 type RecipeType = {
   id: number;
   name: string;
-  description?: string; // Add other recipe-related fields as needed
+  description?: string;
 };
 
 type JournalEntryType = {
@@ -18,8 +18,12 @@ type JournalEntryType = {
   water_weight: number;
   grind_setting: string;
   overall_time: number;
-  brew_tools?: string[]; // Brewing tools as an array
-  recipes?: RecipeType; // Nested recipe data
+  brew_tools?: string[];
+  recipes?: RecipeType;
+};
+
+type UserProfile = {
+  grams: boolean;
 };
 
 export default function JournalEntry() {
@@ -28,23 +32,46 @@ export default function JournalEntry() {
   const [editingEntry, setEditingEntry] = useState<JournalEntryType | null>(null);
   const [deleting, setDeleting] = useState<number | null>(null);
   const [user, setCurrentUser] = useState<any>(null);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
 
   const supabase = createClient();
 
+  // Conversion utility functions
+  const convertGramsToOunces = (grams: number): number => {
+    return Number((grams * 0.03527396).toFixed(1));
+  };
+
   useEffect(() => {
-    const fetchUser = async () => {
+    const fetchUserAndProfile = async () => {
       const {
         data: { user },
-        error,
+        error: userError,
       } = await supabase.auth.getUser();
-      if (error) {
-        console.error('Error fetching user:', error.message);
-      } else {
+
+      if (userError) {
+        console.error('Error fetching user:', userError.message);
+        return;
+      }
+
+      if (user) {
         setCurrentUser(user);
+
+        // Fetch user profile
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('grams')
+          .eq('id', user.id)
+          .single();
+
+        if (profileError) {
+          console.error('Error fetching user profile:', profileError);
+        } else {
+          setUserProfile(profileData);
+        }
       }
     };
 
-    fetchUser();
+    fetchUserAndProfile();
   }, []);
 
   useEffect(() => {
@@ -67,7 +94,7 @@ export default function JournalEntry() {
         grind_setting,
         overall_time,
         brew_tools,
-        recipes ( id, name, description ) // Fetch related recipe data
+        recipes ( id, name, description )
       `)
       .order('created_at', { ascending: false })
       .eq('userid', user.id);
@@ -75,8 +102,20 @@ export default function JournalEntry() {
     if (error) {
       console.error('Error fetching journal entries:', error);
     } else {
-      console.log('Fetched entries:', data); // Log fetched data for debugging
-      setEntries((data as JournalEntryType[]) || []);
+      // Process entries based on measurement system
+      const processedEntries = data ? data.map(entry => {
+        // If profile is not grams, convert weights
+        if (userProfile && !userProfile.grams) {
+          return {
+            ...entry,
+            coffee_weight: convertGramsToOunces(entry.coffee_weight),
+            water_weight: convertGramsToOunces(entry.water_weight)
+          };
+        }
+        return entry;
+      }) : [];
+
+      setEntries(processedEntries as JournalEntryType[]);
     }
     setLoading(false);
   };
@@ -106,7 +145,7 @@ export default function JournalEntry() {
       }
     } catch (error) {
       console.error('Error deleting entry:', error);
-      fetchEntries(); // Re-fetch if there is an error
+      fetchEntries();
     } finally {
       setDeleting(null);
     }
@@ -127,6 +166,15 @@ export default function JournalEntry() {
       }
     }
     return [];
+  };
+
+  // Modify the render to show oz instead of g if not using grams
+  const renderWeight = (weight: number) => {
+    if (userProfile === null) return 'N/A';
+    
+    return userProfile.grams 
+      ? `${weight}g` 
+      : `${weight.toFixed(1)}oz`;
   };
 
   if (loading) {
@@ -188,14 +236,18 @@ export default function JournalEntry() {
                   <div>
                     <dt className="text-sm font-medium text-gray-500">Coffee Weight</dt>
                     <dd className="text-md font-semibold">
-                      {entry.coffee_weight !== undefined ? `${entry.coffee_weight}g` : 'N/A'}
+                      {entry.coffee_weight !== undefined 
+                        ? renderWeight(entry.coffee_weight) 
+                        : 'N/A'}
                     </dd>
                   </div>
 
                   <div>
                     <dt className="text-sm font-medium text-gray-500">Water Weight</dt>
                     <dd className="text-md font-semibold">
-                      {entry.water_weight !== undefined ? `${entry.water_weight}g` : 'N/A'}
+                      {entry.water_weight !== undefined 
+                        ? renderWeight(entry.water_weight) 
+                        : 'N/A'}
                     </dd>
                   </div>
 

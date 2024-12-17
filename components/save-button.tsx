@@ -9,9 +9,18 @@ type Props = ComponentProps<"button"> & {
   fullName: string | null;
 };
 
-export function SaveButton({ id, fullName, ...props }: Props) {
+export function SaveButton({ id, fullName, unit,...props }: Props) {
   const supabase = createClient();
   const [loading, setLoading] = useState(false);
+  let measure = "";
+  if (unit == 'grams')
+  {
+    measure = "true";
+  }
+  else
+  {
+    measure = "false";
+  }
 
   const handleSave = async () => {
     if (id && fullName) {
@@ -19,7 +28,7 @@ export function SaveButton({ id, fullName, ...props }: Props) {
 
       const { data, error } = await supabase
         .from("profiles")
-        .update({ full_name: fullName, updated_at: new Date() })
+        .update({ full_name: fullName, updated_at: new Date(), grams: measure })
         .eq("id", id);
 
       if (error) {
