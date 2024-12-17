@@ -19,7 +19,7 @@ interface BrewTimerProps {
   grindSetting: number;
   waterAmount: number;
   coffeeAmount: number;
-  brewTools?: string[]; // New optional prop for brewing tools
+  brewTools?: string[];
 }
 
 const supabase = createClient();
@@ -31,7 +31,7 @@ const BrewTimer: React.FC<BrewTimerProps> = ({
   grindSetting,
   waterAmount,
   coffeeAmount,
-  brewTools = [], // Default empty array if not provided
+  brewTools = [],
 }) => {
   const router = useRouter();
 
@@ -48,7 +48,8 @@ const BrewTimer: React.FC<BrewTimerProps> = ({
 
   // Animations
   const outlineControls = useAnimation();
-  const coffeeFillControls = useAnimation();
+  const waterLevelControls = useAnimation();
+  const dropsControls = useAnimation();
 
   const r = 80;
   const circumference = 2 * Math.PI * r;
@@ -72,21 +73,38 @@ const BrewTimer: React.FC<BrewTimerProps> = ({
     fetchUser();
   }, []);
 
-  // Coffee Fill Animation
+  // Brewing Animation
   useEffect(() => {
     if (isActive) {
       const stageDuration = stages[currentStage].duration;
-      coffeeFillControls.start({
-        height: "100%",
+      const maxHeight = 70; // Maximum height of water (in percentage)
+
+      // Water level rising animation with controlled max height
+      waterLevelControls.start({
+        height: `${Math.min(maxHeight, 100)}%`,
         transition: {
           duration: stageDuration,
           ease: "easeInOut",
         },
       });
+
+      // Dripping/brewing animation for later stages
+      if (currentStage > 0) {
+        dropsControls.start({
+          y: [0, 50, 0],
+          opacity: [0.3, 1, 0.3],
+          transition: {
+            duration: 2,
+            repeat: Infinity,
+            ease: "easeInOut",
+          },
+        });
+      }
     } else {
-      coffeeFillControls.set({ height: 0 });
+      waterLevelControls.set({ height: 0 });
+      dropsControls.set({ y: 0, opacity: 0 });
     }
-  }, [isActive, currentStage, coffeeFillControls, stages]);
+  }, [isActive, currentStage, waterLevelControls, dropsControls, stages]);
 
   // Timer logic
   useEffect(() => {
@@ -103,8 +121,8 @@ const BrewTimer: React.FC<BrewTimerProps> = ({
             setCurrentStage(next);
             setTimeLeft(stages[next].duration);
             
-            // Reset coffee fill for new stage
-            coffeeFillControls.set({ height: 0 });
+            // Reset water level for new stage
+            waterLevelControls.set({ height: 0 });
           } else {
             // After last stage, just set timeLeft to 0 (brew done)
             setTimeLeft(0);
@@ -143,7 +161,7 @@ const BrewTimer: React.FC<BrewTimerProps> = ({
     setCurrentStage(0);
     setTimeLeft(stages[0].duration);
     setOverallTime(0);
-    coffeeFillControls.set({ height: 0 });
+    waterLevelControls.set({ height: 0 });
     outlineControls.set({ strokeDashoffset: circumference });
   };
 
@@ -229,7 +247,7 @@ const BrewTimer: React.FC<BrewTimerProps> = ({
       </h2>
 
       <div className="mt-6 space-y-6 flex flex-col items-center">
-        {/* Current Stage */}
+        {/* Current Stage Display */}
         <div className="text-center">
           <p className="text-lg text-gray-700">
             <strong>Current Stage:</strong> {stages[currentStage].description}
@@ -253,33 +271,31 @@ const BrewTimer: React.FC<BrewTimerProps> = ({
           </p>
         </div>
 
-        {/* Display coffee cup and timer side by side */}
-        <div className="flex flex-row items-center justify-center gap-8">
-          {/* Coffee Cup */}
-          <div className="relative w-40 h-40">
-            <svg viewBox="0 0 100 100" className="w-full h-full">
-              {/* Cup Outline */}
-              <path
-                d="M20 30 Q20 20 30 20 H70 Q80 20 80 30 V65 Q80 75 70 75 H30 Q20 75 20 65 Z"
-                fill="none"
-                stroke="#333"
-                strokeWidth="2"
+        {/* Display brewing setup */}
+        <div className="flex flex-row items-center justify-center gap-8 w-full">
+          {/* Brewing Setup Visualization */}
+          <div className="relative w-40 h-60 border-2 border-gray-300 rounded overflow-hidden">
+            {/* Coffee Grounds */}
+            <div 
+              className="absolute bottom-0 left-0 w-full bg-[#6F4E37] opacity-80"
+              style={{ height: '30%' }}
+            />
+
+            {/* Water Level with Controlled Max Height */}
+            <motion.div
+              className="absolute bottom-[30%] left-0 w-full bg-blue-300 opacity-70"
+              initial={{ height: 0 }}
+              animate={waterLevelControls}
+            />
+
+            {/* Brewing Drops */}
+            {currentStage > 0 && (
+              <motion.div 
+                className="absolute top-[10%] left-[50%] w-2 h-2 bg-blue-500 rounded-full"
+                initial={{ y: 0, opacity: 0 }}
+                animate={dropsControls}
               />
-              {/* Coffee Fill */}
-              <motion.rect
-                x="21"
-                y="20"
-                width="58"
-                height="55"
-                style={{ 
-                  originY: "100%", 
-                  backgroundColor: "#6F4E37", 
-                  overflow: "hidden" 
-                }}
-                initial={{ height: 0 }}
-                animate={coffeeFillControls}
-              />
-            </svg>
+            )}
           </div>
 
           {/* Circular Timer */}
