@@ -1,4 +1,4 @@
-'use client';
+'use client'; 
 import React, { useState, useCallback, useEffect } from 'react';
 import { createClient } from '@/utils/supabase/client'; // Adjust the import path as needed
 import { motion, AnimatePresence } from 'framer-motion';
@@ -13,6 +13,22 @@ interface ToolOption {
 interface CustomTool {
   name: string;
   image: File | null;
+}
+
+interface SavedTools {
+  brewer?: {
+    selected?: string[];
+    custom?: { name: string; image: string | null };
+  };
+  grinder?: {
+    models?: string[];
+    max_clicks?: number;
+    custom?: { name: string; image: string | null };
+  };
+  kettle?: {
+    selected?: string[];
+    custom?: { name: string; image: string | null };
+  };
 }
 
 const brewerOptions: ToolOption[] = [
@@ -50,6 +66,8 @@ const BrewingToolsSelector: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccessPopup, setShowSuccessPopup] = useState(false);
 
+  const [currentTools, setCurrentTools] = useState<SavedTools | null>(null);
+
   useEffect(() => {
     // Fetch the currently authenticated user
     supabase.auth.getUser().then(({ data, error }) => {
@@ -60,6 +78,24 @@ const BrewingToolsSelector: React.FC = () => {
       }
     });
   }, []);
+
+  useEffect(() => {
+    // Once we have userId, fetch the currently saved tools
+    if (userId) {
+      supabase
+        .from('profiles')
+        .select('tools')
+        .eq('id', userId)
+        .single()
+        .then(({ data, error }) => {
+          if (error) {
+            console.error('Error fetching current tools:', error);
+          } else if (data && data.tools) {
+            setCurrentTools(data.tools);
+          }
+        });
+    }
+  }, [userId]);
 
   const handleCheckboxChange = useCallback(
     (
@@ -132,6 +168,8 @@ const BrewingToolsSelector: React.FC = () => {
     } else {
       console.log('Data inserted successfully:', data);
       setShowSuccessPopup(true);
+      // Update the current tools state
+      setCurrentTools(dataToSend);
     }
   };
 
@@ -194,6 +232,60 @@ const BrewingToolsSelector: React.FC = () => {
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
     >
+      {currentTools && (
+        <div className="p-4 bg-gray-100 rounded shadow-md max-w-md mx-auto mt-6 mb-6">
+          <h3 className="text-md font-bold mb-2">Currently Saved Brew Tools</h3>
+          <div className="text-sm space-y-2">
+            {currentTools.brewer?.selected && currentTools.brewer.selected.length > 0 && (
+              <div>
+                <strong>Brewer(s):</strong> {currentTools.brewer.selected.join(', ')}
+              </div>
+            )}
+            {currentTools.brewer?.custom && (
+              <div>
+                <strong>Custom Brewer:</strong> {currentTools.brewer.custom.name}{' '}
+                {currentTools.brewer.custom.image && (
+                  <img src={currentTools.brewer.custom.image} alt={currentTools.brewer.custom.name} className="w-10 h-10 inline-block ml-2" />
+                )}
+              </div>
+            )}
+
+            {currentTools.grinder?.models && currentTools.grinder.models.length > 0 && (
+              <div>
+                <strong>Grinder(s):</strong> {currentTools.grinder.models.join(', ')}
+              </div>
+            )}
+            {typeof currentTools.grinder?.max_clicks === 'number' && (
+              <div>
+                <strong>Max Grinder Clicks:</strong> {currentTools.grinder.max_clicks}
+              </div>
+            )}
+            {currentTools.grinder?.custom && (
+              <div>
+                <strong>Custom Grinder:</strong> {currentTools.grinder.custom.name}{' '}
+                {currentTools.grinder.custom.image && (
+                  <img src={currentTools.grinder.custom.image} alt={currentTools.grinder.custom.name} className="w-10 h-10 inline-block ml-2" />
+                )}
+              </div>
+            )}
+
+            {currentTools.kettle?.selected && currentTools.kettle.selected.length > 0 && (
+              <div>
+                <strong>Kettle(s):</strong> {currentTools.kettle.selected.join(', ')}
+              </div>
+            )}
+            {currentTools.kettle?.custom && (
+              <div>
+                <strong>Custom Kettle:</strong> {currentTools.kettle.custom.name}{' '}
+                {currentTools.kettle.custom.image && (
+                  <img src={currentTools.kettle.custom.image} alt={currentTools.kettle.custom.name} className="w-10 h-10 inline-block ml-2" />
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       <form
         onSubmit={handleSubmit}
         className="space-y-6 p-4 bg-white rounded shadow-md max-w-md mx-auto mt-10"
