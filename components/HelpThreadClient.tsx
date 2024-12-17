@@ -7,7 +7,7 @@ interface Thread {
   id: number;
   contents: string;
   replys: string[];
-  user_id: string;
+  user_id: string | null; // user_id can now be null
   created_at: string;
 }
 
@@ -65,26 +65,29 @@ const HelpThreadClient = ({ initialThreads }: HelpThreadClientProps) => {
 
       const threads = threadsData as Thread[];
 
-      // Extract user_ids from threads
-      const userIds = Array.from(new Set(threads.map((t) => t.user_id)));
+      // Extract user_ids from threads (filter out null)
+      const userIds = Array.from(new Set(threads.map((t) => t.user_id).filter(Boolean))) as string[];
 
-      // Fetch profiles for these user_ids
-      const { data: profilesData, error: profilesError } = await supabase
-        .from('profiles')
-        .select('id, full_name')
-        .in('id', userIds);
+      let fullNameMap: Record<string, string> = {};
 
-      if (profilesError) {
-        console.error('Error fetching profiles:', profilesError);
-        setErrorMessage('Failed to load user profiles.');
-        return;
+      if (userIds.length > 0) {
+        // Fetch profiles for these user_ids
+        const { data: profilesData, error: profilesError } = await supabase
+          .from('profiles')
+          .select('id, full_name')
+          .in('id', userIds);
+
+        if (profilesError) {
+          console.error('Error fetching profiles:', profilesError);
+          setErrorMessage('Failed to load user profiles.');
+          return;
+        }
+
+        const profiles = profilesData as Profile[];
+        profiles.forEach((profile) => {
+          fullNameMap[profile.id] = profile.full_name;
+        });
       }
-
-      const profiles = profilesData as Profile[];
-      const fullNameMap: Record<string, string> = {};
-      profiles.forEach((profile) => {
-        fullNameMap[profile.id] = profile.full_name;
-      });
 
       setThreads(threads);
       setUserFullNameMap(fullNameMap);
@@ -100,12 +103,13 @@ const HelpThreadClient = ({ initialThreads }: HelpThreadClientProps) => {
       setErrorMessage('You must be logged in to create a thread.');
       return;
     }
+
     if (newThread.trim() !== '') {
       setLoading(true);
       const newThreadObj = {
         contents: newThread,
         replys: [],
-        user_id: currentUser.id,
+        user_id: currentUser.id, // user_id should not be null here since currentUser is defined
       };
 
       try {
@@ -116,8 +120,8 @@ const HelpThreadClient = ({ initialThreads }: HelpThreadClientProps) => {
           setErrorMessage('Failed to create the thread. Please try again.');
         } else if (data && data.length > 0) {
           const insertedThread = data[0] as Thread;
-          // Try to update the userFullNameMap (in case new user)
-          if (!userFullNameMap[insertedThread.user_id]) {
+          // Try to update the userFullNameMap (in case this user wasn't in the map yet)
+          if (insertedThread.user_id && !userFullNameMap[insertedThread.user_id]) {
             const { data: profileData } = await supabase
               .from('profiles')
               .select('full_name')
@@ -127,7 +131,7 @@ const HelpThreadClient = ({ initialThreads }: HelpThreadClientProps) => {
             if (profileData?.full_name) {
               setUserFullNameMap((prev) => ({
                 ...prev,
-                [insertedThread.user_id]: profileData.full_name,
+                [insertedThread.user_id as string]: profileData.full_name,
               }));
             }
           }
@@ -274,8 +278,11 @@ const HelpThreadClient = ({ initialThreads }: HelpThreadClientProps) => {
           >
             <h2 className="text-lg font-semibold mb-2">{thread.contents}</h2>
             <p className="text-sm text-gray-500 mb-2">
-              Posted by {userFullNameMap[thread.user_id] || 'Unknown User'} on{' '}
-              {new Date(thread.created_at).toLocaleString()}
+              Posted by{' '}
+              {thread.user_id
+                ? userFullNameMap[thread.user_id] || 'Unknown User'
+                : 'Unknown User'}{' '}
+              on {new Date(thread.created_at).toLocaleString()}
             </p>
 
             {currentUser?.id === thread.user_id && (
