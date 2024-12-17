@@ -1,11 +1,11 @@
-// components/BlindTestClient.tsx
-
 "use client";
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { createClient } from "@/utils/supabase/client";
+import { useRouter } from "next/navigation";
 import Image from "next/image"; // Ensure you're using Next.js or replace with 'img' if not
+import { Router } from "lucide-react";
 
 // Define the CoffeeBean type within this file
 interface CoffeeBean {
@@ -39,13 +39,17 @@ export default function BlindTestClient() {
     [key: number]: Attributes;
   }>({});
   const [preparationStepIndex, setPreparationStepIndex] = useState<number>(0);
+  const router = useRouter();
+
+  // New state to hold the final star rating (0-5) for each bean
+  const [beanStars, setBeanStars] = useState<{ [key: number]: number }>({});
 
   // Define the preparation steps with images
   const preparationSteps = [
     {
       instruction:
         "Grind beans finely and prepare equal cups to the number of beans selected. Put beans into the cups.",
-      imageSrc: "/images/grinding.gif", // Update the image paths accordingly
+      imageSrc: "/images/grinding.gif",
       altText: "Grinding coffee beans",
     },
     {
@@ -68,8 +72,6 @@ export default function BlindTestClient() {
 
   // Initialize Supabase client
   const supabase = createClient();
-
- 
 
   useEffect(() => {
     // Fetch all beans on component mount, sorted by recently added first
@@ -152,51 +154,53 @@ export default function BlindTestClient() {
     }));
   };
 
-  const handleCompleteTest = async () => {
+  const handleCompleteTest = () => {
     // Ensure all ratings are provided
     if (selectedBeans.length !== 2) {
       setError("Please select exactly two beans to complete the test.");
       return;
     }
+    // Proceed to results step
+    // Initialize beanStars to 0 for each tested bean
+    const initialStars: { [key: number]: number } = {};
+    testOrder.forEach((bean) => {
+      initialStars[bean.id] = 0;
+    });
+    setBeanStars(initialStars);
+    setStep("results");
+  };
 
-    // Optionally, save the ratings to the database here
-    // Example:
-    /*
+  // Handle saving the bean star ratings to supabase
+  const handleSaveBeanRatings = async () => {
     try {
-      const ratingsEntries = testOrder.map((bean) => ({
-        bean_id: bean.id,
-        flavor: attributeRatings[bean.id]?.flavor,
-        aroma: attributeRatings[bean.id]?.aroma,
-        acidity: attributeRatings[bean.id]?.acidity,
-        body: attributeRatings[bean.id]?.body,
-        sweetness: attributeRatings[bean.id]?.sweetness,
-      }));
+      // Update each bean's beans_rating column
+      for (const bean of testOrder) {
+        const rating = beanStars[bean.id];
+        const { error } = await supabase
+          .from("coffeebeans")
+          .update({ beans_rating: rating })
+          .eq("id", bean.id);
 
-      const { error } = await supabase
-        .from("blind_test_feedback")
-        .insert(ratingsEntries);
-
-      if (error) {
-        console.error("Error saving ratings:", error);
-        setError("Failed to save your ratings. Please try again.");
-        return;
+        if (error) {
+          console.error("Error updating bean rating:", error);
+          setError("Failed to save your bean star ratings. Please try again.");
+          return;
+        }
       }
 
-      setStep("results");
+      alert("Bean star ratings saved successfully!");
+      router.push("/protected/displaycommunity");
     } catch (err) {
       console.error("Unexpected error:", err);
-      setError("An unexpected error occurred while saving your ratings.");
+      setError("An unexpected error occurred while saving your bean ratings.");
     }
-    */
-
-    // For demonstration, we'll proceed to results without saving
-    setStep("results");
   };
 
   const handleRestartTest = () => {
     setSelectedBeans([]);
     setTestOrder([]);
     setAttributeRatings({});
+    setBeanStars({});
     setStep("selection");
     setError(null);
   };
@@ -210,7 +214,7 @@ export default function BlindTestClient() {
         <li>Start the blind test to evaluate each bean.</li>
         <li>Follow the preparation steps carefully.</li>
         <li>Rate each attribute using the sliders provided.</li>
-        <li>View the results of your blind test.</li>
+        <li>Finally, give a star rating from 0 to 5 to each bean at the end.</li>
       </ul>
     </div>
   );
@@ -247,9 +251,7 @@ export default function BlindTestClient() {
           </p>
 
           {/* Instructions Section */}
-          <div className="mb-6">
-            {renderInstructions()}
-          </div>
+          <div className="mb-6">{renderInstructions()}</div>
 
           {/* Coffee Beans Selection */}
           <div className="space-y-4">
@@ -314,7 +316,9 @@ export default function BlindTestClient() {
                   className="mx-auto rounded-md"
                 />
               </div>
-              <p className="text-lg">{preparationSteps[preparationStepIndex].instruction}</p>
+              <p className="text-lg">
+                {preparationSteps[preparationStepIndex].instruction}
+              </p>
             </motion.div>
           </AnimatePresence>
           <div className="mt-6 flex justify-center space-x-4">
@@ -330,7 +334,9 @@ export default function BlindTestClient() {
               onClick={handleNextPreparationStep}
               className="px-6 py-2 rounded-md bg-green-600 text-white hover:bg-green-700"
             >
-              {preparationStepIndex < preparationSteps.length - 1 ? "Next" : "Proceed to Test"}
+              {preparationStepIndex < preparationSteps.length - 1
+                ? "Next"
+                : "Proceed to Test"}
             </button>
           </div>
         </div>
@@ -342,12 +348,17 @@ export default function BlindTestClient() {
           {testOrder.map((bean, index) => (
             <div key={bean.id} className="mb-6 p-4 border rounded-md">
               <h4 className="text-lg font-bold">Bean {index + 1}</h4>
-              {/* In a real blind test, you wouldn't show bean details. Here, it's simulated. */}
-              <p className="mb-4">Taste the coffee and adjust the sliders to reflect your experience.</p>
+              <p className="mb-4">
+                Taste the coffee and adjust the sliders to reflect your
+                experience.
+              </p>
               <div className="space-y-4">
                 {/* Flavor Slider */}
                 <div>
-                  <label htmlFor={`flavor-${bean.id}`} className="block text-sm font-medium text-gray-700">
+                  <label
+                    htmlFor={`flavor-${bean.id}`}
+                    className="block text-sm font-medium text-gray-700"
+                  >
                     Flavor: {attributeRatings[bean.id]?.flavor}
                   </label>
                   <input
@@ -358,7 +369,11 @@ export default function BlindTestClient() {
                     max="10"
                     value={attributeRatings[bean.id]?.flavor || 5}
                     onChange={(e) =>
-                      handleAttributeChange(bean.id, "flavor", parseInt(e.target.value))
+                      handleAttributeChange(
+                        bean.id,
+                        "flavor",
+                        parseInt(e.target.value)
+                      )
                     }
                     className="w-full mt-1"
                   />
@@ -366,7 +381,10 @@ export default function BlindTestClient() {
 
                 {/* Aroma Slider */}
                 <div>
-                  <label htmlFor={`aroma-${bean.id}`} className="block text-sm font-medium text-gray-700">
+                  <label
+                    htmlFor={`aroma-${bean.id}`}
+                    className="block text-sm font-medium text-gray-700"
+                  >
                     Aroma: {attributeRatings[bean.id]?.aroma}
                   </label>
                   <input
@@ -377,7 +395,11 @@ export default function BlindTestClient() {
                     max="10"
                     value={attributeRatings[bean.id]?.aroma || 5}
                     onChange={(e) =>
-                      handleAttributeChange(bean.id, "aroma", parseInt(e.target.value))
+                      handleAttributeChange(
+                        bean.id,
+                        "aroma",
+                        parseInt(e.target.value)
+                      )
                     }
                     className="w-full mt-1"
                   />
@@ -385,7 +407,10 @@ export default function BlindTestClient() {
 
                 {/* Acidity Slider */}
                 <div>
-                  <label htmlFor={`acidity-${bean.id}`} className="block text-sm font-medium text-gray-700">
+                  <label
+                    htmlFor={`acidity-${bean.id}`}
+                    className="block text-sm font-medium text-gray-700"
+                  >
                     Acidity: {attributeRatings[bean.id]?.acidity}
                   </label>
                   <input
@@ -396,7 +421,11 @@ export default function BlindTestClient() {
                     max="10"
                     value={attributeRatings[bean.id]?.acidity || 5}
                     onChange={(e) =>
-                      handleAttributeChange(bean.id, "acidity", parseInt(e.target.value))
+                      handleAttributeChange(
+                        bean.id,
+                        "acidity",
+                        parseInt(e.target.value)
+                      )
                     }
                     className="w-full mt-1"
                   />
@@ -404,7 +433,10 @@ export default function BlindTestClient() {
 
                 {/* Body Slider */}
                 <div>
-                  <label htmlFor={`body-${bean.id}`} className="block text-sm font-medium text-gray-700">
+                  <label
+                    htmlFor={`body-${bean.id}`}
+                    className="block text-sm font-medium text-gray-700"
+                  >
                     Body: {attributeRatings[bean.id]?.body}
                   </label>
                   <input
@@ -415,7 +447,11 @@ export default function BlindTestClient() {
                     max="10"
                     value={attributeRatings[bean.id]?.body || 5}
                     onChange={(e) =>
-                      handleAttributeChange(bean.id, "body", parseInt(e.target.value))
+                      handleAttributeChange(
+                        bean.id,
+                        "body",
+                        parseInt(e.target.value)
+                      )
                     }
                     className="w-full mt-1"
                   />
@@ -423,7 +459,10 @@ export default function BlindTestClient() {
 
                 {/* Sweetness Slider */}
                 <div>
-                  <label htmlFor={`sweetness-${bean.id}`} className="block text-sm font-medium text-gray-700">
+                  <label
+                    htmlFor={`sweetness-${bean.id}`}
+                    className="block text-sm font-medium text-gray-700"
+                  >
                     Sweetness: {attributeRatings[bean.id]?.sweetness}
                   </label>
                   <input
@@ -434,7 +473,11 @@ export default function BlindTestClient() {
                     max="10"
                     value={attributeRatings[bean.id]?.sweetness || 5}
                     onChange={(e) =>
-                      handleAttributeChange(bean.id, "sweetness", parseInt(e.target.value))
+                      handleAttributeChange(
+                        bean.id,
+                        "sweetness",
+                        parseInt(e.target.value)
+                      )
                     }
                     className="w-full mt-1"
                   />
@@ -462,15 +505,20 @@ export default function BlindTestClient() {
           transition={{ duration: 0.5 }}
           className="mt-6"
         >
-          <h3 className="text-2xl font-semibold text-center mb-6">Test Results with Attribute Ratings</h3>
+          <h3 className="text-2xl font-semibold text-center mb-6">
+            Test Results with Attribute Ratings
+          </h3>
           {testOrder.map((bean) => (
             <div key={bean.id} className="mb-6 p-4 border rounded-md bg-gray-50">
               <h4 className="text-lg font-bold mb-2">{bean.name}</h4>
               <p className="mb-4">Roaster: {bean.roaster}</p>
               <div className="space-y-4">
-                {/* Flavor Slider (Read-Only) */}
+                {/* Flavor (Read-only) */}
                 <div>
-                  <label htmlFor={`flavor-${bean.id}`} className="block text-sm font-medium text-gray-700">
+                  <label
+                    htmlFor={`flavor-${bean.id}`}
+                    className="block text-sm font-medium text-gray-700"
+                  >
                     Flavor: {attributeRatings[bean.id]?.flavor}
                   </label>
                   <input
@@ -485,9 +533,12 @@ export default function BlindTestClient() {
                   />
                 </div>
 
-                {/* Aroma Slider (Read-Only) */}
+                {/* Aroma (Read-only) */}
                 <div>
-                  <label htmlFor={`aroma-${bean.id}`} className="block text-sm font-medium text-gray-700">
+                  <label
+                    htmlFor={`aroma-${bean.id}`}
+                    className="block text-sm font-medium text-gray-700"
+                  >
                     Aroma: {attributeRatings[bean.id]?.aroma}
                   </label>
                   <input
@@ -502,9 +553,12 @@ export default function BlindTestClient() {
                   />
                 </div>
 
-                {/* Acidity Slider (Read-Only) */}
+                {/* Acidity (Read-only) */}
                 <div>
-                  <label htmlFor={`acidity-${bean.id}`} className="block text-sm font-medium text-gray-700">
+                  <label
+                    htmlFor={`acidity-${bean.id}`}
+                    className="block text-sm font-medium text-gray-700"
+                  >
                     Acidity: {attributeRatings[bean.id]?.acidity}
                   </label>
                   <input
@@ -519,9 +573,12 @@ export default function BlindTestClient() {
                   />
                 </div>
 
-                {/* Body Slider (Read-Only) */}
+                {/* Body (Read-only) */}
                 <div>
-                  <label htmlFor={`body-${bean.id}`} className="block text-sm font-medium text-gray-700">
+                  <label
+                    htmlFor={`body-${bean.id}`}
+                    className="block text-sm font-medium text-gray-700"
+                  >
                     Body: {attributeRatings[bean.id]?.body}
                   </label>
                   <input
@@ -536,9 +593,12 @@ export default function BlindTestClient() {
                   />
                 </div>
 
-                {/* Sweetness Slider (Read-Only) */}
+                {/* Sweetness (Read-only) */}
                 <div>
-                  <label htmlFor={`sweetness-${bean.id}`} className="block text-sm font-medium text-gray-700">
+                  <label
+                    htmlFor={`sweetness-${bean.id}`}
+                    className="block text-sm font-medium text-gray-700"
+                  >
                     Sweetness: {attributeRatings[bean.id]?.sweetness}
                   </label>
                   <input
@@ -552,10 +612,42 @@ export default function BlindTestClient() {
                     className="w-full mt-1 cursor-not-allowed"
                   />
                 </div>
+
+                {/* Star Rating Input (0-5) */}
+                <div>
+                  <label
+                    htmlFor={`star-rating-${bean.id}`}
+                    className="block text-sm font-medium text-gray-700"
+                  >
+                    Star Rating (0 to 5): {beanStars[bean.id]}
+                  </label>
+                  <input
+                    type="range"
+                    id={`star-rating-${bean.id}`}
+                    name={`star-rating-${bean.id}`}
+                    min="0"
+                    max="5"
+                    value={beanStars[bean.id] || 0}
+                    onChange={(e) =>
+                      setBeanStars((prev) => ({
+                        ...prev,
+                        [bean.id]: parseInt(e.target.value),
+                      }))
+                    }
+                    className="w-full mt-1"
+                  />
+                </div>
               </div>
             </div>
           ))}
-          <div className="mt-4 flex justify-center">
+
+          <div className="mt-4 flex justify-center space-x-4">
+            <button
+              onClick={handleSaveBeanRatings}
+              className="px-6 py-2 rounded-md bg-green-600 text-white hover:bg-green-700"
+            >
+              Save Ratings
+            </button>
             <button
               onClick={handleRestartTest}
               className="px-6 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700"
