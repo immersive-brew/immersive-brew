@@ -7,6 +7,7 @@ import { createClient } from "@/utils/supabase/client";
 type Props = ComponentProps<"button"> & {
   id: string | null;
   fullName: string | null;
+  unit: string | null;
 };
 
 export function SaveButton({ id, fullName, unit,...props }: Props) {
