@@ -231,15 +231,17 @@ const grinderTypes = {
   'Manual': { min: 1, max: 15 },
 };
 
-const CoffeeBeansModal: React.FC<{ onClose: (data?: any, file?: File | null) => void }> = ({
-  onClose,
-}) => {
+interface CoffeeBeansModalProps {
+  onClose: (data?: any, file?: File | null) => void;
+}
+
+const CoffeeBeansModal: React.FC<CoffeeBeansModalProps> = ({ onClose }) => {
   // State variables for form data
   const [coffeeName, setCoffeeName] = useState('');
   const [roasterName, setRoasterName] = useState('');
   const [roastDate, setRoastDate] = useState('');
   const [roastLevel, setRoastLevel] = useState('Medium');
-  const [bagWeight, setBagWeight] = useState(0);
+  const [bagWeight, setBagWeight] = useState<number | string>(0);
   const [beansRating, setBeansRating] = useState(0);
   const [varietal, setVarietal] = useState('');
   const [processingMethod, setProcessingMethod] = useState('');
@@ -250,16 +252,14 @@ const CoffeeBeansModal: React.FC<{ onClose: (data?: any, file?: File | null) => 
   const [country, setCountry] = useState('');
   const [region, setRegion] = useState('');
   const [farm, setFarm] = useState('');
-  const [altitude, setAltitude] = useState(0);
+  const [altitude, setAltitude] = useState<number | string>(0);
   const [grinderType, setGrinderType] = useState('Electrical');
   const [grindSize, setGrindSize] = useState('Medium');
-  const [grinderSetting, setGrinderSetting] = useState(10);
+  const [grinderSetting, setGrinderSetting] = useState<number | string>(10);
   const [beanImage, setBeanImage] = useState<File | null>(null);
 
   // Toggles for collapsible sections
   const [methodNotesOpen, setMethodNotesOpen] = useState(false);
-  const [producerOriginOpen, setProducerOriginOpen] = useState(false);
-  const [grinderSettingOpen, setGrinderSettingOpen] = useState(false);
 
   // Reset region when country changes
   useEffect(() => {
@@ -297,6 +297,27 @@ const CoffeeBeansModal: React.FC<{ onClose: (data?: any, file?: File | null) => 
     onClose(beansData, beanImage);
   };
 
+  // Simple star rating component
+  const StarRating = () => {
+    const stars = [1, 2, 3, 4, 5];
+    return (
+      <div className="flex items-center space-x-1">
+        <span className="font-bold text-[#4A2C2A]">Rating:</span>
+        {stars.map((star) => (
+          <button
+            key={star}
+            type="button"
+            onClick={() => setBeansRating(star)}
+            className="text-yellow-500 text-xl"
+          >
+            {star <= beansRating ? '★' : '☆'}
+          </button>
+        ))}
+        <span className="text-sm text-[#4A2C2A] ml-2">{beansRating} / 5</span>
+      </div>
+    );
+  };
+
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-70 overflow-y-auto">
       <div className="bg-[#E6D5B8] p-8 rounded-lg relative w-full max-w-2xl m-4">
@@ -316,7 +337,7 @@ const CoffeeBeansModal: React.FC<{ onClose: (data?: any, file?: File | null) => 
             value={coffeeName}
             onChange={(e) => setCoffeeName(e.target.value)}
             className="w-full p-3 bg-white border border-[#C7A17A] rounded text-[#4A2C2A] text-lg"
-            placeholder="Coffee Name"
+            placeholder="Coffee Name *"
           />
 
           <input
@@ -324,7 +345,7 @@ const CoffeeBeansModal: React.FC<{ onClose: (data?: any, file?: File | null) => 
             value={roasterName}
             onChange={(e) => setRoasterName(e.target.value)}
             className="w-full p-3 bg-white border border-[#C7A17A] rounded text-[#4A2C2A] text-lg"
-            placeholder="Roaster Name"
+            placeholder="Roaster Name *"
           />
 
           {/* Roast Date and Level */}
@@ -347,6 +368,21 @@ const CoffeeBeansModal: React.FC<{ onClose: (data?: any, file?: File | null) => 
               <option value="Dark">Dark</option>
             </select>
           </div>
+
+          {/* Bag Weight */}
+          <div>
+            <label className="block text-[#4A2C2A] text-sm font-bold mb-2">Bag Weight (grams)</label>
+            <input
+              type="number"
+              value={bagWeight}
+              onChange={(e) => setBagWeight(e.target.value)}
+              className="w-full p-3 bg-white border border-[#C7A17A] rounded text-[#4A2C2A] text-lg"
+              placeholder="e.g. 250"
+            />
+          </div>
+
+          {/* Bean Rating */}
+          <StarRating />
 
           {/* Image Upload */}
           <div>
@@ -405,7 +441,9 @@ const CoffeeBeansModal: React.FC<{ onClose: (data?: any, file?: File | null) => 
                         key={note}
                         onClick={() =>
                           setTasteNotes((prev) =>
-                            prev.includes(note) ? prev.filter((n) => n !== note) : [...prev, note]
+                            prev.includes(note)
+                              ? prev.filter((n) => n !== note)
+                              : [...prev, note]
                           )
                         }
                         className={`px-2 py-1 m-1 text-sm rounded ${

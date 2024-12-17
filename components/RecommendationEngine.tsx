@@ -96,13 +96,7 @@ const RecommendationEngine = () => {
 
     const buttonVariants = {
         initial: { scale: 1 },
-        hover: { scale: 1.05, backgroundColor: "#2563EB", transition: { duration: 0.3 } }, // Blue-600
-        tap: { scale: 0.95 },
-    };
-
-    const secondaryButtonVariants = {
-        initial: { scale: 1 },
-        hover: { scale: 1.05, backgroundColor: "#10B981", transition: { duration: 0.3 } }, // Green-500
+        hover: { scale: 1.05, backgroundColor: "#2563EB", transition: { duration: 0.3 } },
         tap: { scale: 0.95 },
     };
 
@@ -137,20 +131,20 @@ const RecommendationEngine = () => {
 
     return (
         <motion.div
-            className="flex flex-col items-center justify-center min-h-screen bg-gray-100 p-6"
+            className="flex flex-col items-center justify-center bg-transparent p-6"
             initial="hidden"
             animate="visible"
             variants={containerVariants}
         >
             <motion.h1
-                className="text-4xl font-bold mb-8"
+                className="text-3xl font-bold mb-8"
                 variants={cardVariants}
             >
                 Recommendation Engine
             </motion.h1>
 
             <motion.div
-                className="w-full max-w-md bg-white p-6 rounded-lg shadow-lg"
+                className="w-full max-w-2xl bg-white p-6 rounded-lg shadow-lg"
                 variants={cardVariants}
             >
                 {["aroma", "flavor", "acidity", "body", "sweetness"].map((attribute) => (
@@ -168,7 +162,9 @@ const RecommendationEngine = () => {
                             onChange={handleSliderChange}
                             className="w-full"
                         />
-                        <div className="text-center text-sm text-gray-600 mt-1">{preferences[attribute]}</div>
+                        <div className="text-center text-sm text-gray-600 mt-1">
+                            {preferences[attribute]}
+                        </div>
                     </div>
                 ))}
 
@@ -279,7 +275,7 @@ const RecommendationEngine = () => {
                 </AnimatePresence>
             </motion.div>
         </motion.div>
-        );
-    };
+    );
+};
 
-    export default RecommendationEngine;
+export default RecommendationEngine;
