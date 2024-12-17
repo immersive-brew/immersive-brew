@@ -174,7 +174,7 @@ export default function JournalEntry() {
     
     return userProfile.grams 
       ? `${weight}g` 
-      : `${weight.toFixed(1)}oz`;
+      : `${(weight * 0.03527396).toFixed(1)}oz`;
   };
 
   if (loading) {
