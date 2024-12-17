@@ -106,18 +106,37 @@ const HelpThreadClient = ({ initialThreads }: HelpThreadClientProps) => {
       setErrorMessage('You must be logged in to create a thread.');
       return;
     }
-
+  
     if (newThread.trim() !== '') {
       setLoading(true);
-      const newThreadObj = {
-        contents: newThread,
-        replys: [],
-        user_id: currentUser.id,
-      };
-
       try {
+        // Step 1: Fetch the current maximum thread ID
+        const { data: maxIdData, error: maxIdError } = await supabase
+          .from('threads')
+          .select('id')
+          .order('id', { ascending: false })
+          .limit(1);
+  
+        if (maxIdError) {
+          console.error('Error fetching max thread ID:', maxIdError);
+          setErrorMessage('Failed to create the thread. Please try again.');
+          setLoading(false);
+          return;
+        }
+  
+        const maxId = maxIdData?.[0]?.id || 0;
+        const nextId = maxId + 1;
+  
+        // Step 2: Create the new thread with the incremented ID
+        const newThreadObj = {
+          id: nextId, // Assign the next ID
+          contents: newThread,
+          replys: [],
+          user_id: currentUser.id,
+        };
+  
         const { data, error } = await supabase.from('threads').insert([newThreadObj]).select('*');
-
+  
         if (error) {
           console.error('Error inserting thread into Supabase:', error);
           setErrorMessage('Failed to create the thread. Please try again.');
@@ -126,23 +145,8 @@ const HelpThreadClient = ({ initialThreads }: HelpThreadClientProps) => {
             ...data[0],
             replys: data[0].replys || [],
           } as Thread;
-          
-          // Try to update the userFullNameMap
-          if (insertedThread.user_id && !userFullNameMap[insertedThread.user_id]) {
-            const { data: profileData } = await supabase
-              .from('profiles')
-              .select('full_name')
-              .eq('id', insertedThread.user_id)
-              .single();
-
-            if (profileData?.full_name) {
-              setUserFullNameMap((prev) => ({
-                ...prev,
-                [insertedThread.user_id as string]: profileData.full_name,
-              }));
-            }
-          }
-
+  
+          // Update the threads list and reset form state
           setThreads([insertedThread, ...threads]);
           setNewThread('');
           console.log('Created new thread:', insertedThread);
