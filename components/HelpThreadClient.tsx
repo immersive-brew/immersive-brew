@@ -3,13 +3,18 @@
 import React, { useState, useEffect } from 'react';
 import { createClient } from '@/utils/supabase/client';
 
-// Define the Thread interface with the added user_id and created_at
+interface Profile {
+  full_name: string;
+}
+
+// Extend Thread interface to include a profiles relationship
 interface Thread {
   id: number;
   contents: string;
   replys: string[];
-  user_id: string; // Added user_id to track the thread creator
-  created_at: string; // Ensure this field exists in your Supabase table
+  user_id: string;
+  created_at: string;
+  profiles?: Profile; // Relationship to user's profile
 }
 
 const supabase = createClient();
@@ -23,8 +28,8 @@ const HelpThreadClient = ({ initialThreads }: HelpThreadClientProps) => {
   const [newThread, setNewThread] = useState('');
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
-  const [currentUser, setCurrentUser] = useState<any>(null); // State to store the current user
-  const [modalOpen, setModalOpen] = useState(false); // State to control modal open/close
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [modalOpen, setModalOpen] = useState(false);
 
   // Fetch the current user when the component mounts
   useEffect(() => {
@@ -43,17 +48,19 @@ const HelpThreadClient = ({ initialThreads }: HelpThreadClientProps) => {
     fetchUser();
   }, []);
 
-  // Fetch and sort threads whenever currentUser changes
+  // Fetch threads, including the related user's profile name
   useEffect(() => {
     const fetchThreads = async () => {
-      let query = supabase.from('threads').select('*').order('created_at', { ascending: false });
-
-      const { data, error } = await query;
+      // Selecting all columns from threads, plus the related profiles table with full_name
+      const { data, error } = await supabase
+        .from('threads')
+        .select('*, profiles(full_name)')
+        .order('created_at', { ascending: false });
 
       if (error) {
         console.error('Error fetching threads:', error);
         setErrorMessage('Failed to load threads.');
-      } else {
+      } else if (data) {
         setThreads(data as Thread[]);
       }
     };
@@ -73,24 +80,23 @@ const HelpThreadClient = ({ initialThreads }: HelpThreadClientProps) => {
       const newThreadObj = {
         contents: newThread,
         replys: [],
-        user_id: currentUser.id, // Include the user_id when creating a thread
+        user_id: currentUser.id,
       };
 
       try {
         const { data, error } = await supabase
           .from('threads')
           .insert([newThreadObj])
-          .select(); // Ensure we return the inserted data
+          .select('*, profiles(full_name)'); // Return the inserted thread with profile info
 
         if (error) {
           console.error('Error inserting thread into Supabase:', error);
           setErrorMessage('Failed to create the thread. Please try again.');
         } else if (data && data.length > 0) {
-          // Prepend the new thread to show it first
+          // Prepend the new thread
           setThreads([data[0] as Thread, ...threads]);
           setNewThread('');
           console.log('Created new thread:', data[0]);
-          // Close modal after creation
           setModalOpen(false);
         }
       } catch (error) {
@@ -230,10 +236,10 @@ const HelpThreadClient = ({ initialThreads }: HelpThreadClientProps) => {
           >
             <h2 className="text-lg font-semibold mb-2">{thread.contents}</h2>
             <p className="text-sm text-gray-500 mb-2">
-              Posted by {thread.user_id} on {new Date(thread.created_at).toLocaleString()}
+              Posted by {thread.profiles?.full_name || 'Unknown User'} on{' '}
+              {new Date(thread.created_at).toLocaleString()}
             </p>
 
-            {/* Show delete button only if the current user is the thread creator */}
             {currentUser?.id === thread.user_id && (
               <button
                 onClick={() => deleteThread(thread.id)}
