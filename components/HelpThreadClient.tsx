@@ -3,18 +3,17 @@
 import React, { useState, useEffect } from 'react';
 import { createClient } from '@/utils/supabase/client';
 
-interface Profile {
-  full_name: string;
-}
-
-// Extend Thread interface to include a profiles relationship
 interface Thread {
   id: number;
   contents: string;
   replys: string[];
   user_id: string;
   created_at: string;
-  profiles?: Profile; // Relationship to user's profile
+}
+
+interface Profile {
+  id: string;
+  full_name: string;
 }
 
 const supabase = createClient();
@@ -30,6 +29,7 @@ const HelpThreadClient = ({ initialThreads }: HelpThreadClientProps) => {
   const [errorMessage, setErrorMessage] = useState('');
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const [userFullNameMap, setUserFullNameMap] = useState<Record<string, string>>({});
 
   // Fetch the current user when the component mounts
   useEffect(() => {
@@ -48,24 +48,49 @@ const HelpThreadClient = ({ initialThreads }: HelpThreadClientProps) => {
     fetchUser();
   }, []);
 
-  // Fetch threads, including the related user's profile name
+  // Fetch threads and profiles
   useEffect(() => {
-    const fetchThreads = async () => {
-      // Selecting all columns from threads, plus the related profiles table with full_name
-      const { data, error } = await supabase
+    const fetchThreadsAndProfiles = async () => {
+      // Fetch threads
+      const { data: threadsData, error: threadsError } = await supabase
         .from('threads')
-        .select('*, profiles(full_name)')
+        .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) {
-        console.error('Error fetching threads:', error);
+      if (threadsError) {
+        console.error('Error fetching threads:', threadsError);
         setErrorMessage('Failed to load threads.');
-      } else if (data) {
-        setThreads(data as Thread[]);
+        return;
       }
+
+      const threads = threadsData as Thread[];
+
+      // Extract user_ids from threads
+      const userIds = Array.from(new Set(threads.map((t) => t.user_id)));
+
+      // Fetch profiles for these user_ids
+      const { data: profilesData, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, full_name')
+        .in('id', userIds);
+
+      if (profilesError) {
+        console.error('Error fetching profiles:', profilesError);
+        setErrorMessage('Failed to load user profiles.');
+        return;
+      }
+
+      const profiles = profilesData as Profile[];
+      const fullNameMap: Record<string, string> = {};
+      profiles.forEach((profile) => {
+        fullNameMap[profile.id] = profile.full_name;
+      });
+
+      setThreads(threads);
+      setUserFullNameMap(fullNameMap);
     };
 
-    fetchThreads();
+    fetchThreadsAndProfiles();
   }, [currentUser]);
 
   const createThread = async (e: React.FormEvent) => {
@@ -84,19 +109,32 @@ const HelpThreadClient = ({ initialThreads }: HelpThreadClientProps) => {
       };
 
       try {
-        const { data, error } = await supabase
-          .from('threads')
-          .insert([newThreadObj])
-          .select('*, profiles(full_name)'); // Return the inserted thread with profile info
+        const { data, error } = await supabase.from('threads').insert([newThreadObj]).select('*');
 
         if (error) {
           console.error('Error inserting thread into Supabase:', error);
           setErrorMessage('Failed to create the thread. Please try again.');
         } else if (data && data.length > 0) {
-          // Prepend the new thread
-          setThreads([data[0] as Thread, ...threads]);
+          const insertedThread = data[0] as Thread;
+          // Try to update the userFullNameMap (in case new user)
+          if (!userFullNameMap[insertedThread.user_id]) {
+            const { data: profileData } = await supabase
+              .from('profiles')
+              .select('full_name')
+              .eq('id', insertedThread.user_id)
+              .single();
+
+            if (profileData?.full_name) {
+              setUserFullNameMap((prev) => ({
+                ...prev,
+                [insertedThread.user_id]: profileData.full_name,
+              }));
+            }
+          }
+
+          setThreads([insertedThread, ...threads]);
           setNewThread('');
-          console.log('Created new thread:', data[0]);
+          console.log('Created new thread:', insertedThread);
           setModalOpen(false);
         }
       } catch (error) {
@@ -236,7 +274,7 @@ const HelpThreadClient = ({ initialThreads }: HelpThreadClientProps) => {
           >
             <h2 className="text-lg font-semibold mb-2">{thread.contents}</h2>
             <p className="text-sm text-gray-500 mb-2">
-              Posted by {thread.profiles?.full_name || 'Unknown User'} on{' '}
+              Posted by {userFullNameMap[thread.user_id] || 'Unknown User'} on{' '}
               {new Date(thread.created_at).toLocaleString()}
             </p>
 
